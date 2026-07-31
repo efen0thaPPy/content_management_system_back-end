@@ -1,7 +1,7 @@
 package cdn.cdn_project.Controllers;
 
 import cdn.cdn_project.Dto.RequestFront.PostContentDto;
-import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import cdn.cdn_project.Services.MovieService;
 import lombok.RequiredArgsConstructor;

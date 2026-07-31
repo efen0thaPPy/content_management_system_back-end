@@ -1,7 +1,7 @@
 package cdn.cdn_project.Services;
 
 import cdn.cdn_project.Dto.RequestFront.PostContentDto;
-import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

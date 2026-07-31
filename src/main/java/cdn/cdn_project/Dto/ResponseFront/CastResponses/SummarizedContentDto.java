@@ -1,17 +1,15 @@
-package cdn.cdn_project.Dto.ResponseFront;
+package cdn.cdn_project.Dto.ResponseFront.CastResponses;
 
 import cdn.cdn_project.Enums.ContentType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
-@NoArgsConstructor
-public class ContentDto {
+public class SummarizedContentDto {
     @JsonProperty("imdbID")
     private String imdbId;
 
@@ -28,18 +26,7 @@ public class ContentDto {
     @JsonProperty("Type")
     private ContentType type;
 
-    @JsonProperty("Plot")
-    private String plot;
 
-    @JsonProperty("Actors")
-    private List<SimpleCastResponseDto>actors;
-
-
-    @JsonProperty("totalSeasons")
-    private String totalSeasons;
-
-    @JsonProperty("seasons")
-    private List<SeasonDto>seasons;
 
 
 }

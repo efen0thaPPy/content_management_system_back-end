@@ -22,4 +22,7 @@ public class UpdateContentDto {
 
     @JsonProperty("Actors")
     private String actors;
+
+    @JsonProperty("Director")
+    private String director;
 }

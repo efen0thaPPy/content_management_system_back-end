@@ -1,5 +1,6 @@
-package cdn.cdn_project.Dto.ResponseFront;
+package cdn.cdn_project.Dto.ResponseFront.CastResponses;
 
+import cdn.cdn_project.Enums.CastType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,9 @@ public class PaginatedCastResponseDto {
 
     @JsonProperty("Poster")
     private String poster;
+
+    @JsonProperty("CastType")
+    private CastType type;
 
     @JsonProperty("Contents")
     private Page<SummarizedContentDto> contents;

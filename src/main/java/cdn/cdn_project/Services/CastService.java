@@ -2,9 +2,9 @@ package cdn.cdn_project.Services;
 
 
 import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
-import cdn.cdn_project.Dto.ResponseFront.CastResponseDto;
-import cdn.cdn_project.Dto.ResponseFront.SimpleCastResponseDto;
-import cdn.cdn_project.Dto.ResponseFront.PaginatedCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

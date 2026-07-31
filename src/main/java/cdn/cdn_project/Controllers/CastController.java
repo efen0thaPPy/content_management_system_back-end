@@ -1,9 +1,9 @@
 package cdn.cdn_project.Controllers;
 
 import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
-import cdn.cdn_project.Dto.ResponseFront.CastResponseDto;
-import cdn.cdn_project.Dto.ResponseFront.SimpleCastResponseDto;
-import cdn.cdn_project.Dto.ResponseFront.PaginatedCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Repos.CastRepo;

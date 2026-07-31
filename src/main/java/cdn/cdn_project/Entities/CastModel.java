@@ -20,6 +20,9 @@ public class CastModel {
 
     private String poster;
 
+    @Enumerated(EnumType.STRING)
+    private CastType castType;
+
 
     @Column(name = "normalized_name",nullable = false, unique = true)
     private String normalizedName;

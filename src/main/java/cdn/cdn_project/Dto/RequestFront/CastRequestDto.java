@@ -12,7 +12,8 @@ public class CastRequestDto {
     @JsonProperty("Poster")
     private String poster;
 
-
+    @JsonProperty("CastType")
+    private CastType castType;
 
     private String [] ids;
 }

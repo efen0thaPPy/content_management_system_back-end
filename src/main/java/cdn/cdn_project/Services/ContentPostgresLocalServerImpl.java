@@ -2,7 +2,7 @@ package cdn.cdn_project.Services;
 import cdn.cdn_project.Dto.RequestFront.PostContentDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateEpisodeDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateSeasonDto;
-import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbEpisodeDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbSeasonDto;
@@ -136,8 +136,8 @@ public class ContentPostgresLocalServerImpl implements MovieService {
         contentModel.setPlot(dto.getPlot());
         contentModel.setYear(dto.getYear());
         contentModel.setTitle(dto.getTitle());
-        mapper.LinkActors(contentModel,dto.getActors());
-
+        mapper.LinkActor(contentModel,dto.getActors());
+        mapper.LinkDirector(contentModel, dto.getDirector());
 
 
 
@@ -162,19 +162,7 @@ public class ContentPostgresLocalServerImpl implements MovieService {
                     seasonModel.setSeries(contentModel);
 
 
-
-                    EpisodeModel episodeModel=episodeRepo.findById(episodeDto.getImdbID()).
-                            orElseThrow(()->new NotFound("couldn't find the episode"));
-
-                    episodeModel.setTitle(episodeDto.getTitle());
-                    episodeModel.setEpisode(episodeDto.getEpisode());
-                    episodeModel.setReleased(episodeDto.getReleased());
-                    episodeModel.setImdbRating(episodeDto.getImdbRating());
-                    episodeModel.setPoster(episodeDto.getPoster());
-                    episodeModel.setPlot(episodeDto.getPlot());
-                    episodeModel.setSeason(seasonModel);
-
-                    seasonModel.getEpisodes().add(episodeModel);
+                    mapper.toEntity(episodeDto,seasonModel);
 
                 }
 

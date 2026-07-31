@@ -22,7 +22,7 @@ public class PostContentDto {
     @JsonProperty("Poster")
     private String poster;
 
-    @Enumerated(EnumType.STRING)
+
     @JsonProperty("Type")
     private ContentType type;
 
@@ -35,6 +35,9 @@ public class PostContentDto {
 
     @JsonProperty("Actors")
     private String actors;
+
+    @JsonProperty("Director")
+    private String director;
 
 
 
