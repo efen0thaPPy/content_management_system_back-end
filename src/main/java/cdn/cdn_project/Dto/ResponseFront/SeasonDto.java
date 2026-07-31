@@ -1,4 +1,4 @@
-package cdn.cdn_project.Dto.fromFront;
+package cdn.cdn_project.Dto.ResponseFront;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -6,12 +6,12 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class UpdateSeasonDto {
-
+public class SeasonDto {
 
     @JsonProperty("Season")
     private String seasonNumber;
 
     @JsonProperty("Episodes")
-    private List<UpdateEpisodeDto> episodes;
+    private List<EpisodeDto> episodes;
+
 }

@@ -1,6 +1,6 @@
-package cdn.cdn_project.Dto.toFront;
+package cdn.cdn_project.Dto.ResponseFront;
 
-import cdn.cdn_project.Enums.Types;
+import cdn.cdn_project.Enums.ContentType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,13 +26,13 @@ public class ContentDto {
 
     @Enumerated(EnumType.STRING)
     @JsonProperty("Type")
-    private Types type;
+    private ContentType type;
 
     @JsonProperty("Plot")
     private String plot;
 
     @JsonProperty("Actors")
-    private List<CastDto>actors;
+    private List<SimpleCastResponseDto>actors;
 
 
     @JsonProperty("totalSeasons")

@@ -1,6 +1,6 @@
 package cdn.cdn_project.Entities;
 
-import cdn.cdn_project.Enums.Types;
+import cdn.cdn_project.Enums.ContentType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,7 +25,7 @@ public class ContentModel {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Types type;
+    private ContentType type;
 
     @Column(nullable = false)
     private String poster;

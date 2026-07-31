@@ -1,6 +1,6 @@
-package cdn.cdn_project.Dto.fromFront;
+package cdn.cdn_project.Dto.RequestFront;
 
-import cdn.cdn_project.Enums.Types;
+import cdn.cdn_project.Enums.ContentType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class ContentPostDto {
+public class PostContentDto {
     @JsonProperty("imdbID")
     private String imdbId;
 
@@ -24,7 +24,7 @@ public class ContentPostDto {
 
     @Enumerated(EnumType.STRING)
     @JsonProperty("Type")
-    private Types type;
+    private ContentType type;
 
     @JsonProperty("Plot")
     private String plot;

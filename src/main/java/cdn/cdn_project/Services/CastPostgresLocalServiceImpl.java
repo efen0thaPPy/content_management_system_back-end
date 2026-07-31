@@ -1,16 +1,20 @@
 package cdn.cdn_project.Services;
 
-import cdn.cdn_project.Dto.fromFront.DetailedCastPutPostDto;
-import cdn.cdn_project.Dto.toFront.CastDto;
-import cdn.cdn_project.Dto.toFront.DetailedCastDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
+import cdn.cdn_project.Dto.ResponseFront.SimpleCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.PaginatedCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponseDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
+import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Mapper.CastMapper;
 import cdn.cdn_project.Mapper.MovieMapper;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -26,32 +30,40 @@ public class CastPostgresLocalServiceImpl implements CastService {
     private final MovieRepo movieRepo;
 
     @Override
-    public List<CastDto> getCasts(){
+    public Page<SimpleCastResponseDto> getCasts(Pageable pageable,String query){
 
-        return castRepo.findAll().stream().map(castMapper::toCastDto).toList();
+            Page<CastModel>castModels;
+
+               if(query!=null&& !query.isBlank()){
+                   castModels=castRepo.findCastModelByNameContainingIgnoreCase(pageable,query);
+                   return castModels.map(castMapper::toCastDto);
+
+               }
+               else{
+                  castModels= castRepo.findAll(pageable);
+                   return castModels.map(castMapper::toCastDto);
+               }
+
+
 
 
     }
     @Override
-    public DetailedCastDto getCast (int id){
+    public PaginatedCastResponseDto getCast (int id, Pageable pageable){
 
 
-        List<ContentModel>contentModels=movieRepo.findContentModelByCastId(id);
+        Page<ContentModel>contentModels=movieRepo.findContentModelByCastId(id,pageable);
 
        CastModel castModel=castRepo.findById(id).
-               orElseThrow(()->new RuntimeException("couldn't find the actor"));
+               orElseThrow(()->new NotFound("couldn't find the actor"));
 
-       DetailedCastDto detailedCastDto=new DetailedCastDto();
+       PaginatedCastResponseDto detailedCastDto=new PaginatedCastResponseDto();
        detailedCastDto.setId(id);
        detailedCastDto.setName(castModel.getName());
         detailedCastDto.setPoster(castModel.getPoster());
-       for(ContentModel contentModel:contentModels){
 
+           detailedCastDto.setContents(contentModels.map(movieMapper::toSummarizedContentDto));
 
-           detailedCastDto.getContents().add( movieMapper.toSummarizedContentDto(contentModel));
-
-
-       }
 
        return detailedCastDto;
 
@@ -60,7 +72,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
     }
     @Override
     @Transactional
-    public DetailedCastDto postCast(DetailedCastPutPostDto detailedContentPostDto) {
+    public CastResponseDto postCast(CastRequestDto detailedContentPostDto) {
 
         String name= detailedContentPostDto.getName();
 
@@ -83,24 +95,24 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
         }
-        DetailedCastDto detailedCastDto=new DetailedCastDto();
-        detailedCastDto.setName(castModel.getName());
-        detailedCastDto.setId(castModel.getId());
-        detailedCastDto.setContents(contentModels.stream().
+        CastResponseDto putPostCastResponseDto=new CastResponseDto();
+        putPostCastResponseDto.setName(castModel.getName());
+        putPostCastResponseDto.setId(castModel.getId());
+        putPostCastResponseDto.setContents(contentModels.stream().
                 map(movieMapper::toSummarizedContentDto).toList());
 
 
-    return detailedCastDto;
+    return putPostCastResponseDto;
 
 
     }
 
     @Override
     @Transactional
-    public DetailedCastDto putCast(int id,DetailedCastPutPostDto detailedCastPutPostDto){
+    public CastResponseDto putCast(int id, CastRequestDto detailedCastPutPostDto){
 
 
-        CastModel castModel= castRepo.findById(id).orElseThrow(()->new RuntimeException("cast not found"));
+        CastModel castModel= castRepo.findById(id).orElseThrow(()->new NotFound("cast not found"));
         castModel.setName(detailedCastPutPostDto.getName());
         castModel.setPoster(detailedCastPutPostDto.getPoster());
         String normalizedName= detailedCastPutPostDto.getName().trim().toLowerCase().replaceAll("\\s+", " ");
@@ -131,15 +143,15 @@ public class CastPostgresLocalServiceImpl implements CastService {
         }
 
 
-        DetailedCastDto detailedCastDto=new DetailedCastDto();
+        CastResponseDto castResponseDto=new CastResponseDto();
 
-        detailedCastDto.setName(castModel.getName());
-        detailedCastDto.setId(id);
+        castResponseDto.setName(castModel.getName());
+        castResponseDto.setId(id);
         List<ContentModel>contentModels2=movieRepo.findContentModelByCastId(id);
-       detailedCastDto.setContents(contentModels2.stream().
+        castResponseDto.setContents(contentModels2.stream().
                 map(movieMapper::toSummarizedContentDto).toList());
 
-        return detailedCastDto;
+        return castResponseDto;
 
 
     }
@@ -150,18 +162,18 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
     @Transactional
-    public DetailedCastDto getAlert(int id) {
+    public CastResponseDto getAlert(int id) {
 
-        CastModel castModel=castRepo.findById(id).orElseThrow(()->new RuntimeException("cast not found"));
+        CastModel castModel=castRepo.findById(id).orElseThrow(()->new NotFound("cast not found"));
 
-        DetailedCastDto detailedCastDto=new DetailedCastDto();
-        detailedCastDto.setContents(castModel.getContentModel().stream().
+        CastResponseDto castResponseDto=new CastResponseDto();
+        castResponseDto.setContents(castModel.getContentModel().stream().
                 map(movieMapper::toSummarizedContentDto).toList());
 
-        detailedCastDto.setId(id);
-        detailedCastDto.setName(castModel.getName());
+        castResponseDto.setId(id);
+        castResponseDto.setName(castModel.getName());
 
-        return detailedCastDto;
+        return castResponseDto;
 
 
 

@@ -1,5 +1,5 @@
 package cdn.cdn_project.Enums;
 
-public enum Types {
+public enum ContentType {
     movie,series
 }

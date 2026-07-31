@@ -1,9 +1,9 @@
 package cdn.cdn_project.Services;
-import cdn.cdn_project.Dto.fromFront.ContentPostDto;
-import cdn.cdn_project.Dto.fromFront.UpdateEpisodeDto;
-import cdn.cdn_project.Dto.fromFront.UpdateSeasonDto;
-import cdn.cdn_project.Dto.toFront.ContentDto;
-import cdn.cdn_project.Dto.fromFront.UpdateContentDto;
+import cdn.cdn_project.Dto.RequestFront.PostContentDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateEpisodeDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateSeasonDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbEpisodeDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbSeasonDto;
 import cdn.cdn_project.Entities.ContentModel;
@@ -15,19 +15,19 @@ import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.EpisodeRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import cdn.cdn_project.Repos.SeasonRepo;
-import cdn.cdn_project.Enums.Types;
+import cdn.cdn_project.Enums.ContentType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 
-public class MoviePostgresLocalServerImpl implements MovieService {
+public class ContentPostgresLocalServerImpl implements MovieService {
 
     @Value("${omdb.api.key}")
     private String key;
@@ -42,16 +42,26 @@ public class MoviePostgresLocalServerImpl implements MovieService {
     private final MovieMapper mapper;
 
 
-    @Transactional
-    @Override
-    public List<ContentDto> getContents() {
 
-         return movieRepo.findAll().stream().map(mapper::toDto).toList();
+    @Override
+    public Page<ContentDto> getContents(String query, Pageable pageable) {
+
+        Page<ContentModel> contentModelPage;
+
+        if( query!=null && !query.isBlank() ){
+           return movieRepo.findByTitleContainingIgnoreCase(query,pageable).map(mapper::toDto);
+
+        }
+        else {
+            contentModelPage=movieRepo.findAll(pageable);
+            return contentModelPage.map(mapper::toDto);
+        }
+
     }
 
     @Transactional
     @Override
-    public ContentDto postContent(ContentPostDto movie) {
+    public ContentDto postContent(PostContentDto movie) {
 
 
         ContentModel contentModel = movieRepo.findById(movie.getImdbId()).orElseGet(()->mapper.toEntity(movie));
@@ -59,7 +69,7 @@ public class MoviePostgresLocalServerImpl implements MovieService {
         movieRepo.save(contentModel);
 
 
-            if(contentModel.getType()==Types.movie){
+            if(contentModel.getType()== ContentType.movie){
 
 
               return mapper.toDto(contentModel);
@@ -131,7 +141,7 @@ public class MoviePostgresLocalServerImpl implements MovieService {
 
 
 
-        if(contentModel.getType()==Types.movie){
+        if(contentModel.getType()== ContentType.movie){
 
             return mapper.toDto(contentModel);
 
@@ -145,7 +155,7 @@ public class MoviePostgresLocalServerImpl implements MovieService {
 
 
                     SeasonModel seasonModel=seasonRepo.findById(seasonId).
-                            orElseThrow(()->new RuntimeException("couldn't find the season"));
+                            orElseThrow(()->new NotFound("couldn't find the season"));
 
 
                     seasonModel.setSeasonNumber(seasonDto.getSeasonNumber());
@@ -154,7 +164,7 @@ public class MoviePostgresLocalServerImpl implements MovieService {
 
 
                     EpisodeModel episodeModel=episodeRepo.findById(episodeDto.getImdbID()).
-                            orElseThrow(()->new RuntimeException("couldn't find the episode"));
+                            orElseThrow(()->new NotFound("couldn't find the episode"));
 
                     episodeModel.setTitle(episodeDto.getTitle());
                     episodeModel.setEpisode(episodeDto.getEpisode());

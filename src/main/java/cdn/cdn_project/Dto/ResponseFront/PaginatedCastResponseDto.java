@@ -1,13 +1,11 @@
-package cdn.cdn_project.Dto.toFront;
+package cdn.cdn_project.Dto.ResponseFront;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.data.domain.Page;
 
 @Data
-public class DetailedCastDto {
+public class PaginatedCastResponseDto {
 
     @JsonProperty("Id")
     private int id;
@@ -19,6 +17,6 @@ public class DetailedCastDto {
     private String poster;
 
     @JsonProperty("Contents")
-    private List<SummarizedContentDto>contents=new ArrayList<>();
+    private Page<SummarizedContentDto> contents;
 
 }

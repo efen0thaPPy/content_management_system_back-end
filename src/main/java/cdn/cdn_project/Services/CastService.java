@@ -1,24 +1,25 @@
 package cdn.cdn_project.Services;
 
 
-import cdn.cdn_project.Dto.fromFront.DetailedCastPutPostDto;
-import cdn.cdn_project.Dto.toFront.CastDto;
-import cdn.cdn_project.Dto.toFront.DetailedCastDto;
-
-import java.util.List;
+import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.SimpleCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.PaginatedCastResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CastService {
 
-    public List<CastDto>getCasts();
-    public DetailedCastDto getCast(int id);
+    public Page<SimpleCastResponseDto> getCasts(Pageable pageable,String query);
+    public PaginatedCastResponseDto getCast(int id, Pageable pageable);
 
-    public DetailedCastDto postCast(DetailedCastPutPostDto detailedCastPutPostDto);
+    public CastResponseDto postCast(CastRequestDto detailedCastPutPostDto);
 
-    public DetailedCastDto putCast(int id,DetailedCastPutPostDto detailedCastPutPostDto);
+    public CastResponseDto putCast(int id, CastRequestDto detailedCastPutPostDto);
 
     public void deleteCast(int id);
 
-    public DetailedCastDto getAlert(int id);
+    public CastResponseDto getAlert(int id);
 
 
 

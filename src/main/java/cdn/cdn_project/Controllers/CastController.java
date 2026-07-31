@@ -1,16 +1,19 @@
 package cdn.cdn_project.Controllers;
 
-import cdn.cdn_project.Dto.fromFront.DetailedCastPutPostDto;
-import cdn.cdn_project.Dto.toFront.CastDto;
-import cdn.cdn_project.Dto.toFront.DetailedCastDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.SimpleCastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.PaginatedCastResponseDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
-import cdn.cdn_project.Services.CastPostgresLocalServiceImpl;
 import cdn.cdn_project.Services.CastService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,25 +32,31 @@ public class CastController {
 
 
     @GetMapping("/cast")
-    public ResponseEntity <List<CastDto>> getCasts(){
-        return ResponseEntity.ok(castService.getCasts());
+    public ResponseEntity <Page<SimpleCastResponseDto>> getCasts(
+            @RequestParam(required = false)String query,
+           @PageableDefault(size = 10, page = 0) Pageable pageable){
+        return ResponseEntity.ok(castService.getCasts(pageable,query));
 
 
     }
     @GetMapping("/cast/{id}")
-    public ResponseEntity<DetailedCastDto> getCast(@PathVariable int id){
-        return ResponseEntity.ok(castService.getCast(id));
+    public ResponseEntity<PaginatedCastResponseDto> getCast(
+            @PathVariable int id,
+            @PageableDefault(size = 10, page = 0)Pageable pageable){
+        return ResponseEntity.ok(castService.getCast(id,pageable));
 
 
     }
     @PostMapping("/cast")
-    public ResponseEntity<DetailedCastDto>postCast(@RequestBody DetailedCastPutPostDto detailedContentPostDto){
+    public ResponseEntity<CastResponseDto>postCast(
+            @RequestBody CastRequestDto detailedContentPostDto)
+           {
 
        return ResponseEntity.status(HttpStatus.CREATED).body(castService.postCast(detailedContentPostDto));
 
     }
     @PutMapping("/cast/{id}")
-    public ResponseEntity<DetailedCastDto>putCast(@PathVariable int id, @RequestBody DetailedCastPutPostDto detailedCastPutPostDto){
+    public ResponseEntity<CastResponseDto>putCast(@PathVariable int id, @RequestBody CastRequestDto detailedCastPutPostDto){
 
      return  ResponseEntity.ok(castService.putCast(id,detailedCastPutPostDto));
     }
@@ -73,7 +82,7 @@ public class CastController {
     }
 
     @GetMapping ("/cast/alert/{id}")
-    ResponseEntity<DetailedCastDto>getAlert(@PathVariable int id){
+    ResponseEntity<CastResponseDto>getAlert(@PathVariable int id){
       return ResponseEntity.ok(castService.getAlert(id));
 
     }

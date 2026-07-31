@@ -1,15 +1,16 @@
 package cdn.cdn_project.Controllers;
 
-import cdn.cdn_project.Dto.fromFront.ContentPostDto;
-import cdn.cdn_project.Dto.toFront.ContentDto;
-import cdn.cdn_project.Dto.fromFront.UpdateContentDto;
+import cdn.cdn_project.Dto.RequestFront.PostContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import cdn.cdn_project.Services.MovieService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -21,9 +22,12 @@ public class ContentController {
 
 
     @GetMapping("/content")
-    public List<ContentDto>getMovies(){
+    public Page<ContentDto> getMovies(
+            @RequestParam(required = false) String query,
+            @PageableDefault(size = 10,page = 0) Pageable pageable){
 
-         return service.getContents();
+
+         return service.getContents(query,pageable);
 
 
     }
@@ -33,7 +37,7 @@ public class ContentController {
 
     }
     @PostMapping("/content")
-    public ResponseEntity<ContentDto>postMovie(@RequestBody ContentPostDto movie){
+    public ResponseEntity<ContentDto>postMovie(@RequestBody PostContentDto movie){
         ContentDto retrievedMovie=service.postContent(movie);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(retrievedMovie);

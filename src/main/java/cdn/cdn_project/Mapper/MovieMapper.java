@@ -1,17 +1,17 @@
 package cdn.cdn_project.Mapper;
 
-import cdn.cdn_project.Dto.fromFront.ContentPostDto;
-import cdn.cdn_project.Dto.toFront.ContentDto;
-import cdn.cdn_project.Dto.toFront.EpisodeDto;
-import cdn.cdn_project.Dto.toFront.SeasonDto;
-import cdn.cdn_project.Dto.toFront.SummarizedContentDto;
+import cdn.cdn_project.Dto.RequestFront.PostContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.EpisodeDto;
+import cdn.cdn_project.Dto.ResponseFront.SeasonDto;
+import cdn.cdn_project.Dto.ResponseFront.SummarizedContentDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Entities.EpisodeModel;
 import cdn.cdn_project.Entities.SeasonModel;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
-import cdn.cdn_project.Enums.Types;
+import cdn.cdn_project.Enums.ContentType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +24,7 @@ public class MovieMapper {
     private final CastMapper castMapper;
 
 
-    public ContentModel toEntity(ContentPostDto dto){
+    public ContentModel toEntity(PostContentDto dto){
         ContentModel contentModel=new ContentModel();
         contentModel.setPlot(dto.getPlot());
         contentModel.setType(dto.getType());
@@ -92,7 +92,7 @@ public class MovieMapper {
         movieDto.setPoster(model.getPoster());
         movieDto.setType(model.getType());
         movieDto.setActors(model.getCasts().stream().map(castMapper::toCastDto).toList());
-        if(model.getType()== Types.series){
+        if(model.getType()== ContentType.series){
             movieDto.setTotalSeasons(model.getTotalSeasons());
           movieDto.setSeasons(model.getSeasons().stream().map(this::toSeasonDto).toList());
 

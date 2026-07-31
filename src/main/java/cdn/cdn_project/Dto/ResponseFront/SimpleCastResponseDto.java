@@ -1,12 +1,12 @@
-package cdn.cdn_project.Dto.toFront;
+package cdn.cdn_project.Dto.ResponseFront;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class CastDto {
+public class SimpleCastResponseDto {
 
-    public CastDto(int id, String name){
+    public SimpleCastResponseDto(int id, String name){
         this.id=id;
         this.name=name;
 

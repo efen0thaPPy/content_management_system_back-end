@@ -1,8 +1,8 @@
 package cdn.cdn_project.Entities;
 
+import cdn.cdn_project.Enums.CastType;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -19,6 +19,7 @@ public class CastModel {
     private String name;
 
     private String poster;
+
 
     @Column(name = "normalized_name",nullable = false, unique = true)
     private String normalizedName;

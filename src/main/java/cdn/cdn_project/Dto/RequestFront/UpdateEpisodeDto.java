@@ -1,11 +1,10 @@
-package cdn.cdn_project.Dto.toFront;
+package cdn.cdn_project.Dto.RequestFront;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class EpisodeDto {
-
+public class UpdateEpisodeDto {
 
     @JsonProperty("imdbID")
     private String imdbID;
@@ -19,15 +18,12 @@ public class EpisodeDto {
     @JsonProperty("imdbRating")
     private String imdbRating;
 
+    @JsonProperty("Released")
+    private String released;
+
     @JsonProperty("Poster")
     private String poster;
 
     @JsonProperty("Plot")
     private String plot;
-
-
-    @JsonProperty("Released")
-    private String released;
-
-
 }

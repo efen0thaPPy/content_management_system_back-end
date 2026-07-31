@@ -1,15 +1,18 @@
-package cdn.cdn_project.Dto.fromFront;
+package cdn.cdn_project.Dto.RequestFront;
 
+import cdn.cdn_project.Enums.CastType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class DetailedCastPutPostDto {
+public class CastRequestDto {
 
     private String name;
 
     @JsonProperty("Poster")
     private String poster;
+
+
 
     private String [] ids;
 }

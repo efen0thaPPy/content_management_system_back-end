@@ -1,6 +1,8 @@
 package cdn.cdn_project.Repos;
 
 import cdn.cdn_project.Entities.ContentModel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,8 +14,18 @@ import java.util.List;
 public interface MovieRepo extends JpaRepository<ContentModel,String> {
 
     @Query("SELECT c from  ContentModel c join c.casts ca where ca.id= :castId")
+    Page<ContentModel> findContentModelByCastId(@Param("castId")int castId, Pageable pageable);
+
+
+
+    @Query("SELECT c from  ContentModel c join c.casts ca where ca.id= :castId")
 
     List<ContentModel> findContentModelByCastId(@Param("castId")int castId);
+
+
+    Page<ContentModel>findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
+
 
 
 }

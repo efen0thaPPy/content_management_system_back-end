@@ -1,4 +1,4 @@
-package cdn.cdn_project.Dto.fromFront;
+package cdn.cdn_project.Dto.RequestFront;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
