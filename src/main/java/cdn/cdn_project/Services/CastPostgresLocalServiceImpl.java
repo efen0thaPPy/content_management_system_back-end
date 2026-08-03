@@ -36,12 +36,12 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
                if(query!=null&& !query.isBlank()){
                    castModels=castRepo.findCastModelByNameContainingIgnoreCase(pageable,query);
-                   return castModels.map(castMapper::toCastDto);
+                   return castModels.map(castMapper::toSimpleCastDto);
 
                }
                else{
                   castModels= castRepo.findAll(pageable);
-                   return castModels.map(castMapper::toCastDto);
+                   return castModels.map(castMapper::toSimpleCastDto);
                }
 
 
@@ -84,10 +84,12 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
         castModel.setNormalizedName(normalizedName);
         castModel.setPoster(detailedContentPostDto.getPoster());
+        castModel.setCastType(detailedContentPostDto.getCastType());
 
         castRepo.save(castModel);
 
         List<ContentModel>contentModels=movieRepo.findAllById(Arrays.asList(detailedContentPostDto.getIds()));
+
 
 
         for(ContentModel contentModel:contentModels){
@@ -95,14 +97,17 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
         }
-        CastResponseDto putPostCastResponseDto=new CastResponseDto();
+        CastResponseDto putPostCastResponseDto = new CastResponseDto();
         putPostCastResponseDto.setName(castModel.getName());
         putPostCastResponseDto.setId(castModel.getId());
         putPostCastResponseDto.setContents(contentModels.stream().
                 map(movieMapper::toSummarizedContentDto).toList());
+        putPostCastResponseDto.setCastType(castModel.getCastType());
+
+        return putPostCastResponseDto;
 
 
-    return putPostCastResponseDto;
+
 
 
     }
@@ -156,8 +161,19 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
     }
+
     @Override
     public void deleteCast(int id) {
+        CastModel castModel=castRepo.findById(id).
+                orElseThrow((()->new RuntimeException("planned to be deleted cast not found")));
+
+
+        List<ContentModel>contentModels=movieRepo.findContentModelByCastId(id);
+
+
+        for(ContentModel contentModel:contentModels){
+            contentModel.getCasts().remove(castModel);
+        }
         castRepo.deleteById(id);
     }
 

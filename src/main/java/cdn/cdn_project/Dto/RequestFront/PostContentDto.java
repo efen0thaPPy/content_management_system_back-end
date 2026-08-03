@@ -23,7 +23,7 @@ public class PostContentDto {
     private String poster;
 
 
-    @JsonProperty("Type")
+    @JsonProperty("ContentType")
     private ContentType type;
 
     @JsonProperty("Plot")

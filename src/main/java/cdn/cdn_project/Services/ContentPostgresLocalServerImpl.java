@@ -24,6 +24,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.swing.text.AbstractDocument;
+
 @Service
 @RequiredArgsConstructor
 
@@ -61,62 +63,77 @@ public class ContentPostgresLocalServerImpl implements MovieService {
 
     @Transactional
     @Override
-    public ContentDto postContent(PostContentDto movie) {
+    public ContentDto postContent(PostContentDto postContentDto){
 
+       if(movieRepo.existsById(postContentDto.getImdbId())){
+           throw new RuntimeException("movie already exists with the same primary key");
 
-        ContentModel contentModel = movieRepo.findById(movie.getImdbId()).orElseGet(()->mapper.toEntity(movie));
-
-        movieRepo.save(contentModel);
-
-
-            if(contentModel.getType()== ContentType.movie){
-
-
-              return mapper.toDto(contentModel);
-
-            }
-
-            else{
-
-
-            int total = Integer.parseInt(movie.getTotalSeasons());
-
-            for (int i = 1; i <= total; i++) {
-
-                String url = "https://www.omdbapi.com/?apikey=" + key + "&i=" + movie.getImdbId() + "&Season=" + i;
-
-                OmdbSeasonDto omdbSeasonDto = restTemplate.getForObject(url, OmdbSeasonDto.class);
-
-                String id=contentModel.getImdbId()+"-S"+omdbSeasonDto.getSeasonNumber();
-
-               SeasonModel seasonModel=seasonRepo.findById(id).orElseGet(SeasonModel::new);
-               seasonModel.setId(id);
-                seasonModel.setSeasonNumber(omdbSeasonDto.getSeasonNumber());
-                seasonModel.setSeries(contentModel);
-
-                seasonRepo.save(seasonModel);
-
-                for (OmdbEpisodeDto dto : omdbSeasonDto.getEpisodes()) {
-
-                    EpisodeModel episodeModel = episodeRepo.findById(dto.getImdbID()).orElseGet(EpisodeModel::new);
-                    episodeModel.setEpisode(dto.getEpisode());
-                    episodeModel.setTitle(dto.getTitle());
-                    episodeModel.setImdbID(dto.getImdbID());
-                    episodeModel.setReleased(dto.getReleased());
-                    episodeModel.setSeason(seasonModel);
-                    episodeModel.setImdbRating(dto.getImdbRating());
-                    episodeRepo.save(episodeModel);
-
-                    seasonModel.getEpisodes().add(episodeModel);
-
-                }
-                contentModel.getSeasons().add(seasonModel);
-            }
-
-            return mapper.toDto(contentModel);
         }
 
+       ContentModel contentModel=mapper.toEntity(postContentDto);
+
+       movieRepo.save(contentModel);
+
+       if(contentModel.getType()==ContentType.movie){
+           return mapper.toDto(contentModel);
+       }
+       else{
+           int totalSeasons=Integer.parseInt(contentModel.getTotalSeasons());
+           for(int i=1;i<=totalSeasons;i++){
+               String url="https://www.omdbapi.com/?apikey="+
+                       key+"&i="+contentModel.getImdbId()+ "&Season="+i;
+
+
+
+               OmdbSeasonDto res=restTemplate.getForObject(url,OmdbSeasonDto.class);
+
+               String seasonId= contentModel.getImdbId()+"-S"+i;
+
+               if(seasonRepo.existsById(seasonId))
+                   throw new RuntimeException("season already exists");
+
+               SeasonModel seasonModel=new SeasonModel();
+               seasonModel.setId(seasonId);
+               seasonModel.setSeries(contentModel);
+               seasonModel.setSeasonNumber(Integer.toString(i));
+               seasonRepo.save(seasonModel);
+
+               for(OmdbEpisodeDto episodeDto:res.getEpisodes()){
+                   if(episodeRepo.existsById(episodeDto.getImdbID()))
+                       throw new RuntimeException("episode already exists");
+
+
+                   EpisodeModel episodeModel=new EpisodeModel();
+                   episodeModel.setEpisode(episodeDto.getEpisode());
+                   episodeModel.setTitle(episodeDto.getTitle());
+                   episodeModel.setReleased(episodeDto.getReleased());
+                   episodeModel.setImdbRating(episodeDto.getImdbRating());
+                   episodeModel.setImdbID(episodeDto.getImdbID());
+                   episodeModel.setSeason(seasonModel);
+
+                   episodeRepo.save(episodeModel);
+
+
+
+               }
+
+
+           }
+       }
+       return mapper.toDto(contentModel);
+
+
     }
+
+    @Override
+    @Transactional
+    public ContentDto putContent(UpdateContentDto updateContentDto,String id){
+
+
+        ContentModel contentModel=mapper.toEntity(updateContentDto,id);
+        return mapper.toDto(contentModel);
+    }
+
 
     @Override
     @Transactional
@@ -126,54 +143,9 @@ public class ContentPostgresLocalServerImpl implements MovieService {
         return mapper.toDto(model);
     }
 
+
+    @Override
     @Transactional
-    @Override
-    public ContentDto putContent(UpdateContentDto dto, String id) {
-
-        ContentModel contentModel=movieRepo.findById(id).orElseThrow(()->new RuntimeException("movie not found"));
-
-
-        contentModel.setPlot(dto.getPlot());
-        contentModel.setYear(dto.getYear());
-        contentModel.setTitle(dto.getTitle());
-        mapper.LinkActor(contentModel,dto.getActors());
-        mapper.LinkDirector(contentModel, dto.getDirector());
-
-
-
-        if(contentModel.getType()== ContentType.movie){
-
-            return mapper.toDto(contentModel);
-
-
-        }
-        else{
-            for(UpdateSeasonDto seasonDto:dto.getSeasonDtoList()){
-
-                String seasonId=contentModel.getImdbId()+"-S"+seasonDto.getSeasonNumber();
-                for(UpdateEpisodeDto episodeDto:seasonDto.getEpisodes()){
-
-
-                    SeasonModel seasonModel=seasonRepo.findById(seasonId).
-                            orElseThrow(()->new NotFound("couldn't find the season"));
-
-
-                    seasonModel.setSeasonNumber(seasonDto.getSeasonNumber());
-                    seasonModel.setSeries(contentModel);
-
-
-                    mapper.toEntity(episodeDto,seasonModel);
-
-                }
-
-            }
-
-            return mapper.toDto(contentModel);
-
-        }
-
-    }
-    @Override
     public void deleteContent(String id) {
         movieRepo.deleteById(id);
     }

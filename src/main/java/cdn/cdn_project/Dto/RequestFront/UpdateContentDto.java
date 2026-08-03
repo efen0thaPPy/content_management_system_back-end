@@ -17,6 +17,9 @@ public class UpdateContentDto {
     @JsonProperty("Plot")
     private String plot;
 
+    @JsonProperty("totalSeasons")
+    private String totalSeasons;
+
     @JsonProperty("Seasons")
     private List<UpdateSeasonDto> seasonDtoList;
 

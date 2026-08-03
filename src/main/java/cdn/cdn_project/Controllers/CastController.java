@@ -10,6 +10,7 @@ import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import cdn.cdn_project.Services.CastService;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,7 @@ public class CastController {
     }
     @PostMapping("/cast")
     public ResponseEntity<CastResponseDto>postCast(
-            @RequestBody CastRequestDto detailedContentPostDto)
+          @Valid @RequestBody CastRequestDto detailedContentPostDto)
            {
 
        return ResponseEntity.status(HttpStatus.CREATED).body(castService.postCast(detailedContentPostDto));
@@ -65,16 +66,6 @@ public class CastController {
     @DeleteMapping("/cast/{id}")
     public ResponseEntity<?>deleteCast(@PathVariable int id){
 
-        CastModel castModel=castRepo.findById(id).
-                orElseThrow((()->new RuntimeException("planned to be deleted cast not found")));
-
-
-        List<ContentModel>contentModels=movieRepo.findContentModelByCastId(id);
-
-
-        for(ContentModel contentModel:contentModels){
-            contentModel.getCasts().remove(castModel);
-        }
 
         castService.deleteCast(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

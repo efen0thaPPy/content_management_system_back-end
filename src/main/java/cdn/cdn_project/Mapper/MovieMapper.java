@@ -1,7 +1,9 @@
 package cdn.cdn_project.Mapper;
 
 import cdn.cdn_project.Dto.RequestFront.PostContentDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
 import cdn.cdn_project.Dto.RequestFront.UpdateEpisodeDto;
+import cdn.cdn_project.Dto.RequestFront.UpdateSeasonDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.EpisodeDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SeasonDto;
@@ -16,6 +18,7 @@ import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.EpisodeRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import cdn.cdn_project.Enums.ContentType;
+import cdn.cdn_project.Repos.SeasonRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +30,7 @@ public class MovieMapper {
     private final CastRepo castRepo;
     private final CastMapper castMapper;
     private final EpisodeRepo episodeRepo;
+    private final SeasonRepo seasonRepo;
 
 
     public ContentModel toEntity(PostContentDto dto){
@@ -39,7 +43,6 @@ public class MovieMapper {
         contentModel.setTitle(dto.getTitle());
         contentModel.setTotalSeasons(dto.getTotalSeasons());
 
-
         LinkActor(contentModel, dto.getActors());
         LinkDirector(contentModel,dto.getDirector());
 
@@ -47,26 +50,63 @@ public class MovieMapper {
 
     }
 
-    public EpisodeModel toEntity(UpdateEpisodeDto episodeDto, SeasonModel seasonModel){
-        EpisodeModel episodeModel=episodeRepo.findById(episodeDto.getImdbID()).
-                orElseThrow(()->new NotFound("couldn't find the episode"));
 
-        episodeModel.setTitle(episodeDto.getTitle());
-        episodeModel.setEpisode(episodeDto.getEpisode());
-        episodeModel.setReleased(episodeDto.getReleased());
-        episodeModel.setImdbRating(episodeDto.getImdbRating());
-        episodeModel.setPoster(episodeDto.getPoster());
-        episodeModel.setPlot(episodeDto.getPlot());
-        episodeModel.setSeason(seasonModel);
+    public ContentModel toEntity(UpdateContentDto updateContentDto,String id) {
 
-        seasonModel.getEpisodes().add(episodeModel);
+        ContentModel contentModel = movieRepo.findById(id).
+                orElseThrow(() -> new RuntimeException("content doesnt exist"));
 
-        return  episodeModel;
+        if (updateContentDto.getPlot() != null) contentModel.setPlot(updateContentDto.getPlot());
+        if (updateContentDto.getYear() != null) contentModel.setYear(updateContentDto.getYear());
+        if (updateContentDto.getTitle() != null) contentModel.setTitle(updateContentDto.getTitle());
+        if (updateContentDto.getTotalSeasons() != null)
+            contentModel.setTotalSeasons(updateContentDto.getTotalSeasons());
+
+        LinkActor(contentModel, updateContentDto.getActors());
+        LinkDirector(contentModel,updateContentDto.getDirector());
+
+        if (updateContentDto.getSeasonDtoList() != null) {
+            for (UpdateSeasonDto updateSeasonDto : updateContentDto.getSeasonDtoList()) {
+
+                if (updateSeasonDto.getSeasonNumber() == null)
+                    throw new RuntimeException("season number doesnt exist");
+
+                String seasonId = id + "-S" + updateSeasonDto.getSeasonNumber();
+                SeasonModel seasonModel = seasonRepo.findById(seasonId).
+                        orElseGet(() ->
+                        {
+                            SeasonModel seasonModel1 = new SeasonModel();
+                            seasonModel1.setId(seasonId);
+                            seasonModel1.setSeasonNumber(updateSeasonDto.getSeasonNumber());
+                            seasonModel1.setSeries(contentModel);
+                            return seasonModel1;
+                        });
+                seasonRepo.save(seasonModel);
+
+                for (UpdateEpisodeDto updateEpisodeDto : updateSeasonDto.getEpisodes()) {
+                    EpisodeModel episodeModel = episodeRepo.findById(updateEpisodeDto.getImdbID()).
+                            orElseThrow(() ->new RuntimeException("episode not found"));
+
+
+                    if (updateEpisodeDto.getPlot() != null) episodeModel.setPlot(updateEpisodeDto.getPlot());
+                    if (updateEpisodeDto.getPoster() != null) episodeModel.setPoster(updateEpisodeDto.getPoster());
+                    if (updateEpisodeDto.getTitle() != null) episodeModel.setTitle(updateEpisodeDto.getTitle());
+                    if (updateEpisodeDto.getEpisode() != null) episodeModel.setEpisode(updateEpisodeDto.getEpisode());
+                    if (updateEpisodeDto.getImdbRating() != null) episodeModel.setImdbRating(updateEpisodeDto.getImdbRating());
+                    episodeModel.setSeason(seasonModel);
+                    episodeRepo.save(episodeModel);
+
+                }
+            }
+
+        }
+        return contentModel;
+
     }
 
     public void LinkActor(ContentModel contentModel, String actor) {
 
-        if (actor == null) ;
+        if (actor == null) return;
 
         String[] actors = actor.split(", ");
 
@@ -124,7 +164,7 @@ public class MovieMapper {
         movieDto.setTitle(model.getTitle());
         movieDto.setPoster(model.getPoster());
         movieDto.setType(model.getType());
-        movieDto.setCasts(model.getCasts().stream().map(castMapper::toCastDto).toList());
+        movieDto.setCasts(model.getCasts().stream().map(castMapper::toSimpleCastDto).toList());
         if(model.getType()== ContentType.series){
             movieDto.setTotalSeasons(model.getTotalSeasons());
           movieDto.setSeasons(model.getSeasons().stream().map(this::toSeasonDto).toList());
@@ -166,6 +206,7 @@ public class MovieMapper {
         summarizedContentDto.setPoster(contentModel.getPoster());
         summarizedContentDto.setImdbId(contentModel.getImdbId());
         summarizedContentDto.setYear(contentModel.getYear());
+        summarizedContentDto.setType(contentModel.getType());
 
 
 

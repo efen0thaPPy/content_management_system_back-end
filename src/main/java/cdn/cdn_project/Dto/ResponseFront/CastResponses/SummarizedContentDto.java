@@ -23,7 +23,7 @@ public class SummarizedContentDto {
     private String poster;
 
     @Enumerated(EnumType.STRING)
-    @JsonProperty("Type")
+    @JsonProperty("ContentType")
     private ContentType type;
 
 

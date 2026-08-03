@@ -1,4 +1,4 @@
-package cdn.cdn_project;
+package cdn.cdn_project.Configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
