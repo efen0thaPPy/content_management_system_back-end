@@ -9,7 +9,7 @@ import java.util.List;
 public class SeasonDto {
 
     @JsonProperty("Season")
-    private String seasonNumber;
+    private String season;
 
     @JsonProperty("Episodes")
     private List<EpisodeDto> episodes;

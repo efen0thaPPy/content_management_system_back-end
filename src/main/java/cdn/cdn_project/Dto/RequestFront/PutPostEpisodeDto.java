@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 @Data
-public class UpdateEpisodeDto {
+public class PutPostEpisodeDto {
 
     @JsonProperty("imdbID")
     private String imdbID;

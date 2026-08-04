@@ -6,12 +6,12 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class UpdateSeasonDto {
+public class PutPostSeasonDto {
 
 
     @JsonProperty("Season")
-    private String seasonNumber;
+    private String season;
 
     @JsonProperty("Episodes")
-    private List<UpdateEpisodeDto> episodes;
+    private List<PutPostEpisodeDto> episodes;
 }

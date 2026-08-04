@@ -17,7 +17,7 @@ public class PaginatedCastResponseDto {
     @JsonProperty("Poster")
     private String poster;
 
-    @JsonProperty("CastType")
+    @JsonProperty("castType")
     private CastType type;
 
     @JsonProperty("Contents")

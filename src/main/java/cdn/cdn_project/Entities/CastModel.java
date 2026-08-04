@@ -30,4 +30,6 @@ public class CastModel {
     @ManyToMany(mappedBy = "casts")
     private List<ContentModel> contentModel;
 
+
+
 }

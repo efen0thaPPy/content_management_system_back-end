@@ -1,9 +1,9 @@
 package cdn.cdn_project.Mapper;
 
-import cdn.cdn_project.Dto.RequestFront.PostContentDto;
-import cdn.cdn_project.Dto.RequestFront.UpdateContentDto;
-import cdn.cdn_project.Dto.RequestFront.UpdateEpisodeDto;
-import cdn.cdn_project.Dto.RequestFront.UpdateSeasonDto;
+import cdn.cdn_project.Dto.RequestFront.PutPostContentDto;
+import cdn.cdn_project.Dto.RequestFront.PutPostEpisodeDto;
+
+import cdn.cdn_project.Dto.RequestFront.PutPostSeasonDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.EpisodeDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SeasonDto;
@@ -13,7 +13,6 @@ import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Entities.EpisodeModel;
 import cdn.cdn_project.Entities.SeasonModel;
 import cdn.cdn_project.Enums.CastType;
-import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.EpisodeRepo;
 import cdn.cdn_project.Repos.MovieRepo;
@@ -22,9 +21,12 @@ import cdn.cdn_project.Repos.SeasonRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Component
 @RequiredArgsConstructor
-public class MovieMapper {
+public class ContentMapper {
 
     private final MovieRepo movieRepo;
     private final CastRepo castRepo;
@@ -33,66 +35,74 @@ public class MovieMapper {
     private final SeasonRepo seasonRepo;
 
 
-    public ContentModel toEntity(PostContentDto dto){
+    public ContentModel toEntity(PutPostContentDto dto, boolean isLocal){
         ContentModel contentModel=new ContentModel();
         contentModel.setPlot(dto.getPlot());
-        contentModel.setType(dto.getType());
-        contentModel.setImdbId(dto.getImdbId());
+        contentModel.setType(dto.getContentType());
+        contentModel.setImdbId(dto.getImdbID());
         contentModel.setPoster(dto.getPoster());
         contentModel.setYear(dto.getYear());
         contentModel.setTitle(dto.getTitle());
-        contentModel.setTotalSeasons(dto.getTotalSeasons());
 
+
+        if(isLocal && dto.getSeasons()!=null)
+            contentModel.setSeasons(dto.getSeasons().stream().
+                map((e)->this.toSeasonModel(e, contentModel.getImdbId(), contentModel)).toList());
+
+        if(dto.getContentType()!=ContentType.movie){
+            contentModel.setTotalSeasons(dto.getTotalSeasons());
+        }
         LinkActor(contentModel, dto.getActors());
         LinkDirector(contentModel,dto.getDirector());
+
 
         return contentModel;
 
     }
 
 
-    public ContentModel toEntity(UpdateContentDto updateContentDto,String id) {
+    public ContentModel toEntity(PutPostContentDto putPostContentDto, String id) {
 
         ContentModel contentModel = movieRepo.findById(id).
                 orElseThrow(() -> new RuntimeException("content doesnt exist"));
 
-        if (updateContentDto.getPlot() != null) contentModel.setPlot(updateContentDto.getPlot());
-        if (updateContentDto.getYear() != null) contentModel.setYear(updateContentDto.getYear());
-        if (updateContentDto.getTitle() != null) contentModel.setTitle(updateContentDto.getTitle());
-        if (updateContentDto.getTotalSeasons() != null)
-            contentModel.setTotalSeasons(updateContentDto.getTotalSeasons());
+        if (putPostContentDto.getPlot() != null) contentModel.setPlot(putPostContentDto.getPlot());
+        if (putPostContentDto.getYear() != null) contentModel.setYear(putPostContentDto.getYear());
+        if (putPostContentDto.getTitle() != null) contentModel.setTitle(putPostContentDto.getTitle());
+        if (putPostContentDto.getTotalSeasons() != null)
+            contentModel.setTotalSeasons(putPostContentDto.getTotalSeasons());
 
-        LinkActor(contentModel, updateContentDto.getActors());
-        LinkDirector(contentModel,updateContentDto.getDirector());
+        LinkActor(contentModel, putPostContentDto.getActors());
+        LinkDirector(contentModel, putPostContentDto.getDirector());
 
-        if (updateContentDto.getSeasonDtoList() != null) {
-            for (UpdateSeasonDto updateSeasonDto : updateContentDto.getSeasonDtoList()) {
+        if (putPostContentDto.getSeasons() != null) {
+            for (PutPostSeasonDto putPostSeasonDto : putPostContentDto.getSeasons()) {
 
-                if (updateSeasonDto.getSeasonNumber() == null)
+                if (putPostSeasonDto.getSeason() == null)
                     throw new RuntimeException("season number doesnt exist");
 
-                String seasonId = id + "-S" + updateSeasonDto.getSeasonNumber();
+                String seasonId = id + "-S" + putPostSeasonDto.getSeason();
                 SeasonModel seasonModel = seasonRepo.findById(seasonId).
                         orElseGet(() ->
                         {
                             SeasonModel seasonModel1 = new SeasonModel();
                             seasonModel1.setId(seasonId);
-                            seasonModel1.setSeasonNumber(updateSeasonDto.getSeasonNumber());
+                            seasonModel1.setSeasonNumber(putPostSeasonDto.getSeason());
                             seasonModel1.setSeries(contentModel);
                             return seasonModel1;
                         });
                 seasonRepo.save(seasonModel);
-
-                for (UpdateEpisodeDto updateEpisodeDto : updateSeasonDto.getEpisodes()) {
-                    EpisodeModel episodeModel = episodeRepo.findById(updateEpisodeDto.getImdbID()).
+                if(putPostContentDto.getSeasons()!=null)
+                for (PutPostEpisodeDto pustPostEpisodeDto : putPostSeasonDto.getEpisodes()) {
+                    EpisodeModel episodeModel = episodeRepo.findById(pustPostEpisodeDto.getImdbID()).
                             orElseThrow(() ->new RuntimeException("episode not found"));
 
 
-                    if (updateEpisodeDto.getPlot() != null) episodeModel.setPlot(updateEpisodeDto.getPlot());
-                    if (updateEpisodeDto.getPoster() != null) episodeModel.setPoster(updateEpisodeDto.getPoster());
-                    if (updateEpisodeDto.getTitle() != null) episodeModel.setTitle(updateEpisodeDto.getTitle());
-                    if (updateEpisodeDto.getEpisode() != null) episodeModel.setEpisode(updateEpisodeDto.getEpisode());
-                    if (updateEpisodeDto.getImdbRating() != null) episodeModel.setImdbRating(updateEpisodeDto.getImdbRating());
+                    if (pustPostEpisodeDto.getPlot() != null) episodeModel.setPlot(pustPostEpisodeDto.getPlot());
+                    if (pustPostEpisodeDto.getPoster() != null) episodeModel.setPoster(pustPostEpisodeDto.getPoster());
+                    if (pustPostEpisodeDto.getTitle() != null) episodeModel.setTitle(pustPostEpisodeDto.getTitle());
+                    if (pustPostEpisodeDto.getEpisode() != null) episodeModel.setEpisode(pustPostEpisodeDto.getEpisode());
+                    if (pustPostEpisodeDto.getImdbRating() != null) episodeModel.setImdbRating(pustPostEpisodeDto.getImdbRating());
                     episodeModel.setSeason(seasonModel);
                     episodeRepo.save(episodeModel);
 
@@ -175,8 +185,9 @@ public class MovieMapper {
     }
     public SeasonDto toSeasonDto(SeasonModel seasonModel){
         SeasonDto seasonDto=new SeasonDto();
-        seasonDto.setSeasonNumber(seasonModel.getSeasonNumber());
+        seasonDto.setSeason(seasonModel.getSeasonNumber());
         seasonDto.setEpisodes(seasonModel.getEpisodes().stream().map(this::toEpisodeDto).toList());
+
         return seasonDto;
 
 
@@ -212,5 +223,38 @@ public class MovieMapper {
 
         return summarizedContentDto;
 
+    }
+
+    public SeasonModel toSeasonModel(PutPostSeasonDto seasonDto,String id,ContentModel contentModel){
+        SeasonModel seasonModel=new SeasonModel();
+        seasonModel.setSeasonNumber(seasonDto.getSeason());
+        String seasonId=id+"-S"+seasonModel.getSeasonNumber();
+        seasonModel.setId(seasonId);
+
+       seasonModel.setEpisodes(seasonDto.getEpisodes().stream().
+               map((e)->this.toEpisodeModel(e,seasonModel)).collect(Collectors.toList()));
+       seasonModel.setSeries(contentModel);
+       return seasonModel;
+
+    }
+    public EpisodeModel toEpisodeModel(PutPostEpisodeDto episodeDto, SeasonModel seasonModel){
+
+        EpisodeModel episodeModel=new EpisodeModel();
+        if(episodeDto.getImdbID()==null){
+            String episodeId= UUID.randomUUID().toString();
+            episodeModel.setImdbID(episodeId);
+        }
+        else  episodeModel.setImdbID(episodeDto.getImdbID());
+
+        episodeModel.setPlot(episodeDto.getPlot());
+        episodeModel.setEpisode(episodeDto.getEpisode());
+        episodeModel.setPoster(episodeDto.getPoster());
+        episodeModel.setTitle(episodeDto.getTitle());
+        episodeModel.setReleased(episodeDto.getReleased());
+        episodeModel.setSeason(seasonModel);
+        episodeModel.setImdbRating(episodeDto.getImdbRating());
+
+
+        return episodeModel;
     }
 }

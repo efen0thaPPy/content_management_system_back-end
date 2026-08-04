@@ -35,7 +35,7 @@ public class CastController {
     @GetMapping("/cast")
     public ResponseEntity <Page<SimpleCastResponseDto>> getCasts(
             @RequestParam(required = false)String query,
-           @PageableDefault(size = 10, page = 0) Pageable pageable){
+           @PageableDefault(size = 30, page = 0) Pageable pageable){
         return ResponseEntity.ok(castService.getCasts(pageable,query));
 
 

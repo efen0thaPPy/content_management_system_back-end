@@ -39,7 +39,7 @@ public class ContentDto {
     @JsonProperty("totalSeasons")
     private String totalSeasons;
 
-    @JsonProperty("seasons")
+    @JsonProperty("Seasons")
     private List<SeasonDto>seasons;
 
 

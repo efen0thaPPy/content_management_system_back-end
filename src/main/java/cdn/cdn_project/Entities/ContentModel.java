@@ -4,6 +4,8 @@ import cdn.cdn_project.Enums.ContentType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.Persistable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,7 +15,7 @@ import java.util.Set;
 @Entity
 @Data
 @NoArgsConstructor
-public class ContentModel {
+public class ContentModel implements Persistable<String> {
     @Id
     private String imdbId;
 
@@ -33,10 +35,12 @@ public class ContentModel {
     @Column(nullable = false)
     private String plot;
 
+    @Transient
+    private boolean isNew=true;
 
     private String totalSeasons;
 
-    @OneToMany(mappedBy = "series", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "series", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SeasonModel>seasons=new ArrayList<>();
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
@@ -47,5 +51,18 @@ public class ContentModel {
     private Set<CastModel> casts=new HashSet<>();
 
 
+    @Override
+    public  String getId() {
+        return imdbId;
+    }
 
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.isNew = false;
+    }
 }

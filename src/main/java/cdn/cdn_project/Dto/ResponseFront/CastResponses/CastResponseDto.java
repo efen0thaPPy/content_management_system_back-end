@@ -19,7 +19,7 @@ public class CastResponseDto {
     @JsonProperty("Poster")
     private String poster;
 
-    @JsonProperty("CastType")
+    @JsonProperty("castType")
     private CastType castType;
 
     @JsonProperty("Contents")

@@ -16,7 +16,7 @@ public class CastRequestDto {
     private String poster;
 
 
-    @JsonProperty("CastType")
+    @JsonProperty("castType")
     @NotNull(message = "choose a cast type")
     private CastType castType;
 

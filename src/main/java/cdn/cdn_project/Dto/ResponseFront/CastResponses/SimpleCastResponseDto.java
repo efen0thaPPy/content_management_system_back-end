@@ -14,13 +14,15 @@ public class SimpleCastResponseDto {
 
     }
 
+    @JsonProperty("Id")
     private int id;
 
+    @JsonProperty("Name")
     private String name;
 
     @JsonProperty("Poster")
     private String poster;
 
-    @JsonProperty("CastType")
+    @JsonProperty("castType")
     private CastType castType;
 }

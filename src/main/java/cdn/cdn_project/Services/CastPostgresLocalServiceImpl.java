@@ -8,7 +8,7 @@ import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Mapper.CastMapper;
-import cdn.cdn_project.Mapper.MovieMapper;
+import cdn.cdn_project.Mapper.ContentMapper;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import jakarta.transaction.Transactional;
@@ -26,7 +26,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
     private final CastRepo castRepo;
     private final CastMapper castMapper;
-    private final MovieMapper movieMapper;
+    private final ContentMapper contentMapper;
     private final MovieRepo movieRepo;
 
     @Override
@@ -62,7 +62,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
        detailedCastDto.setName(castModel.getName());
         detailedCastDto.setPoster(castModel.getPoster());
 
-           detailedCastDto.setContents(contentModels.map(movieMapper::toSummarizedContentDto));
+           detailedCastDto.setContents(contentModels.map(contentMapper::toSummarizedContentDto));
 
 
        return detailedCastDto;
@@ -101,7 +101,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
         putPostCastResponseDto.setName(castModel.getName());
         putPostCastResponseDto.setId(castModel.getId());
         putPostCastResponseDto.setContents(contentModels.stream().
-                map(movieMapper::toSummarizedContentDto).toList());
+                map(contentMapper::toSummarizedContentDto).toList());
         putPostCastResponseDto.setCastType(castModel.getCastType());
 
         return putPostCastResponseDto;
@@ -155,7 +155,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
         castResponseDto.setId(id);
         List<ContentModel>contentModels2=movieRepo.findContentModelByCastId(id);
         castResponseDto.setContents(contentModels2.stream().
-                map(movieMapper::toSummarizedContentDto).toList());
+                map(contentMapper::toSummarizedContentDto).toList());
 
         return castResponseDto;
 
@@ -185,7 +185,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
         CastResponseDto castResponseDto=new CastResponseDto();
         castResponseDto.setContents(castModel.getContentModel().stream().
-                map(movieMapper::toSummarizedContentDto).toList());
+                map(contentMapper::toSummarizedContentDto).toList());
 
         castResponseDto.setId(id);
         castResponseDto.setName(castModel.getName());
