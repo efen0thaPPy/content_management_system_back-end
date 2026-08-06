@@ -1,11 +1,14 @@
 package cdn.cdn_project.Services;
 
+import cdn.cdn_project.Dto.RequestFront.CastPostRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastPutRequestDto;
 import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
+import cdn.cdn_project.Enums.CastType;
 import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Mapper.CastMapper;
 import cdn.cdn_project.Mapper.ContentMapper;
@@ -72,7 +75,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
     }
     @Override
     @Transactional
-    public CastResponseDto postCast(CastRequestDto detailedContentPostDto) {
+    public CastResponseDto postCast(CastPostRequestDto detailedContentPostDto) {
 
         String name= detailedContentPostDto.getName();
 
@@ -106,53 +109,55 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
         return putPostCastResponseDto;
 
-
-
-
-
     }
 
     @Override
     @Transactional
-    public CastResponseDto putCast(int id, CastRequestDto detailedCastPutPostDto){
+    public CastResponseDto putCast(int id, CastPutRequestDto detailedCastPutPostDto){
 
 
         CastModel castModel= castRepo.findById(id).orElseThrow(()->new NotFound("cast not found"));
-        castModel.setName(detailedCastPutPostDto.getName());
-        castModel.setPoster(detailedCastPutPostDto.getPoster());
-        String normalizedName= detailedCastPutPostDto.getName().trim().toLowerCase().replaceAll("\\s+", " ");
-        castModel.setNormalizedName(normalizedName);
-        castModel.setCastType(detailedCastPutPostDto.getCastType());
-
-        List<ContentModel>contentModels=movieRepo.findContentModelByCastId(id);
-
-
-        Set<String>newIds=new HashSet<>(Arrays.asList(detailedCastPutPostDto.getIds()));
-
-        Set<String>currentIds=new HashSet<>(contentModels.stream().map(ContentModel::getImdbId).
-                collect(Collectors.toSet()));
-
-        Set<String> toRemove=new HashSet<>(currentIds);
-        toRemove.removeAll(newIds);
-
-        Set<String>toAdd=new HashSet<>(newIds);
-        toAdd.removeAll(currentIds);
-
-        for(ContentModel model:contentModels){
-            if(toRemove.contains(model.getImdbId()))
-                model.getCasts().remove(castModel);
+        if(detailedCastPutPostDto.getName()!=null) castModel.setName(detailedCastPutPostDto.getName());
+        if(detailedCastPutPostDto.getPoster()!=null) castModel.setPoster(detailedCastPutPostDto.getPoster());
+        if(detailedCastPutPostDto.getName()!=null) {
+            String normalizedName= detailedCastPutPostDto.getName().trim().toLowerCase().replaceAll("\\s+", " ");
+            castModel.setNormalizedName(normalizedName);
         }
+        if(detailedCastPutPostDto.getCastType()!=null)  castModel.setCastType(detailedCastPutPostDto.getCastType());
 
-        List<ContentModel>contentModels1=movieRepo.findAllById(toAdd);
-        for(ContentModel contentModel:contentModels1){
-            contentModel.getCasts().add(castModel);
+
+            List<ContentModel>contentModels=movieRepo.findContentModelByCastId(id);
+
+            if(detailedCastPutPostDto.getIds()!=null){
+
+
+            Set<String>newIds=new HashSet<>(Arrays.asList(detailedCastPutPostDto.getIds()));
+
+            Set<String>currentIds=new HashSet<>(contentModels.stream().map(ContentModel::getImdbId).
+                    collect(Collectors.toSet()));
+
+            Set<String> toRemove=new HashSet<>(currentIds);
+            toRemove.removeAll(newIds);
+
+            Set<String>toAdd=new HashSet<>(newIds);
+            toAdd.removeAll(currentIds);
+
+            for(ContentModel model:contentModels){
+                if(toRemove.contains(model.getImdbId()))
+                    model.getCasts().remove(castModel);
+            }
+
+            List<ContentModel>contentModels1=movieRepo.findAllById(toAdd);
+            for(ContentModel contentModel:contentModels1){
+                contentModel.getCasts().add(castModel);
+            }
         }
-
 
         CastResponseDto castResponseDto=new CastResponseDto();
-
         castResponseDto.setName(castModel.getName());
         castResponseDto.setId(id);
+        castResponseDto.setCastType(castModel.getCastType());
+
         List<ContentModel>contentModels2=movieRepo.findContentModelByCastId(id);
         castResponseDto.setContents(contentModels2.stream().
                 map(contentMapper::toSummarizedContentDto).toList());

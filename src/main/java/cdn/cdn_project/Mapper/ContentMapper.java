@@ -45,7 +45,7 @@ public class ContentMapper {
         contentModel.setTitle(dto.getTitle());
 
 
-        if(isLocal && dto.getSeasons()!=null)
+        if(isLocal && dto.getContentType()!=ContentType.movie && dto.getSeasons()!=null )
             contentModel.setSeasons(dto.getSeasons().stream().
                 map((e)->this.toSeasonModel(e, contentModel.getImdbId(), contentModel)).toList());
 
@@ -95,7 +95,14 @@ public class ContentMapper {
                 if(putPostContentDto.getSeasons()!=null)
                 for (PutPostEpisodeDto pustPostEpisodeDto : putPostSeasonDto.getEpisodes()) {
                     EpisodeModel episodeModel = episodeRepo.findById(pustPostEpisodeDto.getImdbID()).
-                            orElseThrow(() ->new RuntimeException("episode not found"));
+                            orElseGet(() ->
+                            {
+                                EpisodeModel episodeModel1=new EpisodeModel();
+                                episodeModel1.setImdbID(UUID.randomUUID().toString());
+                                return episodeModel1;
+                            });
+
+
 
 
                     if (pustPostEpisodeDto.getPlot() != null) episodeModel.setPlot(pustPostEpisodeDto.getPlot());

@@ -11,16 +11,16 @@ public class EpisodeModel implements Persistable<String> {
     @Id
     private String imdbID;
 
-    @Column(nullable = false)
+
     private String title;
 
-    @Column(nullable = false)
+
     private String episode;
 
-    @Column(nullable = false)
+
     private String imdbRating;
 
-    @Column(nullable = false)
+
     private String released;
 
     private String poster;

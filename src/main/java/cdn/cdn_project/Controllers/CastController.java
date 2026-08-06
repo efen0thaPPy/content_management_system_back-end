@@ -1,5 +1,7 @@
 package cdn.cdn_project.Controllers;
 
+import cdn.cdn_project.Dto.RequestFront.CastPostRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastPutRequestDto;
 import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
@@ -50,14 +52,14 @@ public class CastController {
     }
     @PostMapping("/cast")
     public ResponseEntity<CastResponseDto>postCast(
-          @Valid @RequestBody CastRequestDto detailedContentPostDto)
+          @Valid @RequestBody CastPostRequestDto detailedContentPostDto)
            {
 
        return ResponseEntity.status(HttpStatus.CREATED).body(castService.postCast(detailedContentPostDto));
 
     }
     @PutMapping("/cast/{id}")
-    public ResponseEntity<CastResponseDto>putCast(@PathVariable int id, @RequestBody CastRequestDto detailedCastPutPostDto){
+    public ResponseEntity<CastResponseDto>putCast(@PathVariable int id, @RequestBody CastPutRequestDto detailedCastPutPostDto){
 
      return  ResponseEntity.ok(castService.putCast(id,detailedCastPutPostDto));
     }

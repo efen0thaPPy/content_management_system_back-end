@@ -19,20 +19,20 @@ public class ContentModel implements Persistable<String> {
     @Id
     private String imdbId;
 
-    @Column(nullable = false)
+
     private String title;
 
-    @Column(nullable = false)
+
     private String year;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ContentType type;
 
-    @Column(nullable = false)
+
     private String poster;
 
-    @Column(nullable = false)
+
     private String plot;
 
     @Transient
