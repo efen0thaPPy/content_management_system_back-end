@@ -1,4 +1,4 @@
-package cdn.cdn_project.Dto.RequestFront;
+package cdn.cdn_project.Dto.RequestFront.CastRequests;
 
 import cdn.cdn_project.Enums.CastType;
 import com.fasterxml.jackson.annotation.JsonProperty;

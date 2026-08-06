@@ -1,5 +1,6 @@
 package cdn.cdn_project.Services;
-import cdn.cdn_project.Dto.RequestFront.*;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbEpisodeDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbSeasonDto;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 
-public class ContentPostgresLocalServerImpl implements MovieService {
+public class ContentPostgresLocalServerImpl implements ContentService {
 
     @Value("${omdb.api.key}")
     private String key;
@@ -49,7 +49,8 @@ public class ContentPostgresLocalServerImpl implements MovieService {
     @Override
     public Page<ContentDto> getContents(String query, String contentType,Pageable pageable) {
 
-        Specification<ContentModel>textSearch=Specification.where(ContentSpecifications.searchByTitle(query)).
+        Specification<ContentModel>textSearch=Specification.where(
+                ContentSpecifications.searchByTitle(query)).
                         or(ContentSpecifications.searchByPlot(query)).
                         or(ContentSpecifications.searchByYear(query)).
                         or(ContentSpecifications.searchByActorName(query));
@@ -134,7 +135,6 @@ public class ContentPostgresLocalServerImpl implements MovieService {
                 episodeModel.setSeason(seasonModel);
 
                 episodeRepo.save(episodeModel);
-
 
 
             }

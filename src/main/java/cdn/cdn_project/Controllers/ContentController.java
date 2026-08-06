@@ -1,9 +1,9 @@
 package cdn.cdn_project.Controllers;
 
-import cdn.cdn_project.Dto.RequestFront.BatchPostDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
-import cdn.cdn_project.Dto.RequestFront.PutPostContentDto;
-import cdn.cdn_project.Services.MovieService;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
+import cdn.cdn_project.Services.ContentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +20,7 @@ import java.util.List;
 
 public class ContentController {
 
-    private final MovieService service;
+    private final ContentService service;
 
 
     @GetMapping("/content")

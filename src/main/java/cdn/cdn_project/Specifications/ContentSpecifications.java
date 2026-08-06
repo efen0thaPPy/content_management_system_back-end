@@ -6,6 +6,7 @@ import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Enums.CastType;
 import cdn.cdn_project.Enums.ContentType;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.beans.factory.BeanRegistry;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,6 +14,19 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.IllegalFormatConversionException;
 
 public class ContentSpecifications {
+
+
+
+    public static Specification<ContentModel>searchById(String id){
+
+        return (root,query,criteriaBuilder)->{
+
+            if(id==null || !id.matches("\\d+"))return null;
+
+            return criteriaBuilder.equal(root.get("imdbId"),id);
+
+        };
+    }
 
     public static Specification<ContentModel>searchByTitle(String title){
 
@@ -39,7 +53,9 @@ public class ContentSpecifications {
         {
             if(actorName==null || actorName.trim().isEmpty()) return null;
 
-            Join<ContentModel, CastModel> joinTable=root.join("casts");
+            query.distinct(true);
+
+            Join<ContentModel, CastModel> joinTable=root.join("casts", JoinType.LEFT);
 
             Predicate nameMatches=criteriaBuilder.like(criteriaBuilder.lower(joinTable.get("name")),"%"+actorName.toLowerCase()+"%");
 
@@ -74,7 +90,7 @@ public class ContentSpecifications {
         {
             if(plot==null || plot.trim().isEmpty()) return null;
 
-            return criteriaBuilder.like(criteriaBuilder.lower(root.get("plot")),"%"+plot+"%");
+            return criteriaBuilder.like(criteriaBuilder.lower(root.get("plot")),"%"+plot.toLowerCase()+"%");
 
 
         };

@@ -1,9 +1,9 @@
 package cdn.cdn_project.Mapper;
 
-import cdn.cdn_project.Dto.RequestFront.PutPostContentDto;
-import cdn.cdn_project.Dto.RequestFront.PutPostEpisodeDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostEpisodeDto;
 
-import cdn.cdn_project.Dto.RequestFront.PutPostSeasonDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostSeasonDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.EpisodeDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SeasonDto;

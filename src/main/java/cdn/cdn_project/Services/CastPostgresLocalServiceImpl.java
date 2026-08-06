@@ -1,23 +1,23 @@
 package cdn.cdn_project.Services;
 
-import cdn.cdn_project.Dto.RequestFront.CastPostRequestDto;
-import cdn.cdn_project.Dto.RequestFront.CastPutRequestDto;
-import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPostRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPutRequestDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
-import cdn.cdn_project.Enums.CastType;
 import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Mapper.CastMapper;
 import cdn.cdn_project.Mapper.ContentMapper;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
+import cdn.cdn_project.Specifications.CastSpecifications;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -33,19 +33,16 @@ public class CastPostgresLocalServiceImpl implements CastService {
     private final MovieRepo movieRepo;
 
     @Override
-    public Page<SimpleCastResponseDto> getCasts(Pageable pageable,String query){
+    public Page<SimpleCastResponseDto> getCasts(Pageable pageable,String castTypes,String query){
 
-            Page<CastModel>castModels;
 
-               if(query!=null&& !query.isBlank()){
-                   castModels=castRepo.findCastModelByNameContainingIgnoreCase(pageable,query);
-                   return castModels.map(castMapper::toSimpleCastDto);
+        Specification<CastModel>textSearch=Specification.
+                where(CastSpecifications.searchById(query)).
+                or(CastSpecifications.searchByName(query));
 
-               }
-               else{
-                  castModels= castRepo.findAll(pageable);
-                   return castModels.map(castMapper::toSimpleCastDto);
-               }
+        Specification<CastModel>spec=textSearch.and(CastSpecifications.searchByCastType(castTypes));
+
+           return castRepo.findAll(spec,pageable).map(castMapper::toSimpleCastDto);
 
 
 

@@ -2,13 +2,22 @@ package cdn.cdn_project.Services;
 
 
 
-import cdn.cdn_project.Dto.RequestFront.*;
+import cdn.cdn_project.AiConversationStore;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPostRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPutRequestDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
+import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
+import cdn.cdn_project.Mapper.GeminiMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +30,8 @@ public class GeminiAiService {
     private final ContentPostgresLocalServerImpl contentService;
     private final JsonMapper jsonMapper;
     private final CastPostgresLocalServiceImpl castService;
+    private final AiConversationStore aiConversationStore;
+    private final GeminiMapper geminiMapper;
 
 
 
@@ -182,10 +193,6 @@ public class GeminiAiService {
                                                     Map.entry("Plot", Map.of(
                                                             "type", "string"
                                                     )),
-                                                    Map.entry("totalSeasons", Map.of(
-                                                            "type", "string",
-                                                            "description", "Only relevant if ContentType is a series"
-                                                    )),
                                                     Map.entry("Actors", Map.of(
                                                             "type", "string"
                                                     )),
@@ -222,6 +229,20 @@ public class GeminiAiService {
                                             "required",List.of("id")
 
                                     )
+                            ),
+                            Map.of("name","search_content",
+                                    "description","Use this tool to find the ID of a movie or series" +
+                                            " when a user wants to perform an operation but only provides" +
+                                            " metadata instead of the ID. And also you can use this tool" +
+                                            " to answer if a content exists or not and you can use it to return the metadata of a content",
+                                    "parameters",Map.of(
+                                            "type","object",
+                                            "properties",Map.of(
+                                                    "query",Map.of("type","string"),
+                                            "contentType",Map.of("type","string",
+                                                    "enum",List.of("movie","series"))))
+
+
                             )
 
                     )
@@ -230,87 +251,168 @@ public class GeminiAiService {
     public GeminiAiService(RestClient geminiRestClient,
                            ContentPostgresLocalServerImpl contentService,
                            JsonMapper jsonMapper,
-                           CastPostgresLocalServiceImpl castService) {
+                           CastPostgresLocalServiceImpl castService,
+                           AiConversationStore aiConversationStore,
+                           GeminiMapper geminiMapper) {
         this.geminiRestClient = geminiRestClient;
         this.contentService = contentService;
         this.jsonMapper = jsonMapper;
         this.castService=castService;
+        this.aiConversationStore=aiConversationStore;
+        this.geminiMapper=geminiMapper;
     }
 
-    public String handleUserMessage(String userText) {
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", userText)))),
-                "tools", GEMINI_TOOLS
-        );
+    public String handleUserMessage(String sessionId,String userText) {
+       List<Map<String,Object>>history=aiConversationStore.getHistory(sessionId);
+       history.add(Map.of(
+               "role","user",
+               "parts",List.of(Map.of("text",userText))
+       ));
+       return converse(history,0);
+    }
 
-        Map<String, Object> response = geminiRestClient.post()
-                .uri("/models/gemini-3.6-flash:generateContent")
-                .body(requestBody)
+    private static final int MAX_TOTAL_HOPS=5;
+
+    private String converse(List<Map<String, Object>>history, int hopCount){
+        if(hopCount>=MAX_TOTAL_HOPS){
+            return "if you keep phrasing as is i wont be able to complete, simplify your request";
+        }
+        Map<String, Object>requestBody=Map.of(
+                "contents", history,
+                "tools",GEMINI_TOOLS
+        );
+        Map<String,Object>response=geminiRestClient.post().
+                uri("/models/gemini-3.6-flash:generateContent").
+                body(requestBody)
                 .retrieve()
                 .body(Map.class);
-
-        return handleResponse(response);
+        return handleResponse(history,response,hopCount);
     }
 
     @SuppressWarnings("unchecked")
-    private String handleResponse(Map<String, Object> response) {
-        List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
-        Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-        List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+    private String handleResponse(List<Map<String, Object>>history,Map<String,Object>response,int hopCount) {
+        List<Map<String, Object>>candidates=(List<Map<String, Object>>)response.get("candidates");
+        Map<String, Object>content=(Map<String, Object>)candidates.get(0).get("content");
+        List<Map<String,Object>>parts=(List<Map<String,Object>>)content.get("parts");
 
-        for (Map<String, Object> part : parts) {
-            if (part.containsKey("functionCall")) {
-                Map<String, Object> functionCall = (Map<String, Object>) part.get("functionCall");
-                String toolName = (String) functionCall.get("name");
-                Map<String, Object> input = (Map<String, Object>) functionCall.get("args");
-                return dispatchTool(toolName, input);
-            }
-            if (part.containsKey("text")) {
-                return (String) part.get("text");
-            }
+        List<Map<String,Object>>functionCallParts=parts.stream().filter(p->p.containsKey("functionCall"))
+                .toList();
+
+        if(!functionCallParts.isEmpty()){
+
+            history.add(Map.of(
+                    "role","model",
+                    "parts",functionCallParts
+            ));
+
+          List<Map<String,Object>> functionResponseParts=functionCallParts.stream().map(p->
+            {
+                Map<String,Object>functionCall=(Map<String,Object>) p.get("functionCall");
+                String toolName=(String)functionCall.get("name");
+                Map<String,Object>input=(Map<String,Object>)functionCall.get("args");
+                Object toolResult= dispatchTool(toolName,input);
+
+                Map<String,Object>functionResponseBody=new HashMap<>();
+                functionResponseBody.put("response",Map.of("result",toolResult));
+                functionResponseBody.put("name",toolName);
+                if(functionCall.get("id")!=null) functionResponseBody.put("id",functionCall.get("id"));
+
+                return Map.<String,Object>of("functionResponse",functionResponseBody);
+
+
+
+
+            }).toList();
+
+          history.add(Map.of(
+                  "role","user",
+                  "parts",functionResponseParts
+          ));
+
+
+
+          return converse(history,hopCount+1);
+
         }
-        return "I didn't understand that.";
+
+
+    for(Map<String,Object>part:parts){
+        if(part.containsKey("text")){
+            String text=(String)part.get("text");
+            history.add(Map.of(
+                    "role","model",
+                    "parts",List.of(part)
+            ));
+            return text;
+        }
+    }
+    return "i didnt understand that";
+
+
     }
 
 
-    private String dispatchTool(String toolName, Map<String, Object> input) {
+    private Object dispatchTool(String toolName, Map<String, Object> input) {
+        try{
+
         return switch (toolName) {
             case "create_movie" -> {
                 PutPostContentDto dto = jsonMapper.convertValue(input, PutPostContentDto.class);
                 ContentDto created = contentService.postContent(dto);
-                yield "Created: " + created.getTitle();
+                yield Map.of("status","created","id",created.getImdbId(), "title", created.getTitle());
             }
             case "delete_movie" -> {
                 String id = (String) input.get("id");
                 contentService.deleteContent(id);
-                yield "Deleted movie " + id;
+                yield Map.of("status","deleted","id",id);
             }
             case "create_cast"->{
                 CastPostRequestDto castRequestDto=jsonMapper.convertValue(input, CastPostRequestDto.class);
                CastResponseDto castResponseDto=castService.postCast(castRequestDto);
-               yield "Created "+ castResponseDto.getName();
+               yield Map.of("status","created","id",castResponseDto.getId(),"name",castResponseDto.getName());
 
             }
             case "batch_create_contents"->{
                 BatchPostDto batchPostDto=jsonMapper.convertValue(input, BatchPostDto.class);
                List<ContentDto>contentDtos= contentService.postContents(batchPostDto);
-                yield "Created "+ contentDtos.size() + " contents";
+                yield Map.of("status","created","count",contentDtos.size());
 
             }
             case "update_content"->{
                 PutPostContentDto putPostContentDto=jsonMapper.convertValue(input, PutPostContentDto.class);
                 String id=(String)input.get("id");
                 ContentDto contentDto=contentService.putContent(putPostContentDto,id);
-                yield "Updated "+ contentDto.getImdbId();
+                yield Map.of("status","updated","id",contentDto.getImdbId());
             }
             case "update_cast"->{
                 CastPutRequestDto castRequestDto =jsonMapper.convertValue(input, CastPutRequestDto.class);
                 Integer id=(Integer) input.get("id");
                 CastResponseDto castResponseDto=castService.putCast(id,castRequestDto);
-                yield castResponseDto.getId()+" Updated";
+                yield Map.of("status","updated","id",castResponseDto.getId());
 
             }
-            default -> "Unknown action: " + toolName;
+            case "search_content"->{
+                String query=(String)input.get("query");
+                String contentType=(String)input.get("contentType");
+
+                Pageable limit= PageRequest.of(0,5);
+
+               Page<ContentDto> contentDtoPage= contentService.getContents(query,contentType,limit);
+
+               List<Map<String,Object>>results=contentDtoPage.getContent().stream().map(geminiMapper::toMap).toList();
+
+               yield results.isEmpty()?
+                       Map.of("status","no_results","query",query):
+                       Map.of("status","ok","matches",results);
+
+            }
+            default -> Map.of("status","error","message","Unknown action: "+toolName);
         };
+
+        }
+        catch(Exception e){
+            return Map.of("status","error","message",e.getMessage()!=null?e.getMessage():"Something went wrong");
+
+        }
     }
 }

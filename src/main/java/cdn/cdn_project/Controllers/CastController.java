@@ -1,13 +1,10 @@
 package cdn.cdn_project.Controllers;
 
-import cdn.cdn_project.Dto.RequestFront.CastPostRequestDto;
-import cdn.cdn_project.Dto.RequestFront.CastPutRequestDto;
-import cdn.cdn_project.Dto.RequestFront.CastRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPostRequestDto;
+import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPutRequestDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
-import cdn.cdn_project.Entities.CastModel;
-import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import cdn.cdn_project.Services.CastService;
@@ -20,8 +17,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -37,8 +32,9 @@ public class CastController {
     @GetMapping("/cast")
     public ResponseEntity <Page<SimpleCastResponseDto>> getCasts(
             @RequestParam(required = false)String query,
-           @PageableDefault(size = 30, page = 0) Pageable pageable){
-        return ResponseEntity.ok(castService.getCasts(pageable,query));
+           @PageableDefault(size = 30, page = 0) Pageable pageable,
+            @RequestParam(required = false) String castType){
+        return ResponseEntity.ok(castService.getCasts(pageable,castType,query));
 
 
     }
