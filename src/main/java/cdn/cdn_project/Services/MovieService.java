@@ -12,7 +12,7 @@ public interface MovieService {
 
     public ContentDto getContentById(String id);
 
-    public Page<ContentDto> getContents(String query,Pageable pageable);
+    public Page<ContentDto> getContents(String query,String contentType, Pageable pageable);
 
     public ContentDto putContent(PutPostContentDto dto, String id);
 

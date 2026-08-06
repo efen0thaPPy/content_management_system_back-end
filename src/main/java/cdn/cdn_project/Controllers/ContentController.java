@@ -25,11 +25,13 @@ public class ContentController {
 
     @GetMapping("/content")
     public Page<ContentDto> getMovies(
-            @RequestParam(required = false) String query,
-            @PageableDefault(size = 20,page = 0) Pageable pageable){
+            @PageableDefault(size = 20,page = 0) Pageable pageable,
+            @RequestParam(required = false)  String query,
+            @RequestParam(required = false) String contentType)
+    {
 
 
-         return service.getContents(query,pageable);
+         return service.getContents(query,contentType,pageable);
 
 
     }

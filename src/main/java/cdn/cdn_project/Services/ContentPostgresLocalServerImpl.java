@@ -13,11 +13,13 @@ import cdn.cdn_project.Repos.CastRepo;
 import cdn.cdn_project.Repos.EpisodeRepo;
 import cdn.cdn_project.Repos.MovieRepo;
 import cdn.cdn_project.Repos.SeasonRepo;
+import cdn.cdn_project.Specifications.ContentSpecifications;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
@@ -45,18 +47,24 @@ public class ContentPostgresLocalServerImpl implements MovieService {
 
 
     @Override
-    public Page<ContentDto> getContents(String query, Pageable pageable) {
+    public Page<ContentDto> getContents(String query, String contentType,Pageable pageable) {
 
-        Page<ContentModel> contentModelPage;
+        Specification<ContentModel>textSearch=Specification.where(ContentSpecifications.searchByTitle(query)).
+                        or(ContentSpecifications.searchByPlot(query)).
+                        or(ContentSpecifications.searchByYear(query)).
+                        or(ContentSpecifications.searchByActorName(query));
 
-        if( query!=null && !query.isBlank() ){
-           return movieRepo.findByTitleContainingIgnoreCase(query,pageable).map(mapper::toDto);
 
-        }
-        else {
-            contentModelPage=movieRepo.findAll(pageable);
-            return contentModelPage.map(mapper::toDto);
-        }
+
+        Specification<ContentModel>spec=textSearch.and(ContentSpecifications.searchByContentType(contentType));
+
+
+
+
+
+       return movieRepo.findAll(spec,pageable).map(mapper::toDto);
+
+
 
     }
 
@@ -87,9 +95,6 @@ public class ContentPostgresLocalServerImpl implements MovieService {
 
 
          return mapper.toDto(contentModel);
-
-
-
 
     }
 
@@ -168,4 +173,5 @@ public class ContentPostgresLocalServerImpl implements MovieService {
     public void deleteContent(String id) {
         movieRepo.deleteById(id);
     }
+
 }
