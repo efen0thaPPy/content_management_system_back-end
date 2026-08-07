@@ -163,7 +163,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
     }
-
+    @Transactional
     @Override
     public void deleteCast(int id) {
         CastModel castModel=castRepo.findById(id).
@@ -181,6 +181,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
 
     @Transactional
+
     public CastResponseDto getAlert(int id) {
 
         CastModel castModel=castRepo.findById(id).orElseThrow(()->new NotFound("cast not found"));
@@ -194,8 +195,13 @@ public class CastPostgresLocalServiceImpl implements CastService {
 
         return castResponseDto;
 
-
-
+    }
+    @Transactional
+    @Override
+    public void deleteCasts(List<Integer>ids){
+        for(int id:ids){
+            deleteCast(id);
+        }
 
     }
 }

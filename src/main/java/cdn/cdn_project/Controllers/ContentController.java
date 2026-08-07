@@ -24,7 +24,7 @@ public class ContentController {
 
 
     @GetMapping("/content")
-    public Page<ContentDto> getMovies(
+    public Page<ContentDto> getContents(
             @PageableDefault(size = 20,page = 0) Pageable pageable,
             @RequestParam(required = false)  String query,
             @RequestParam(required = false) String contentType)
@@ -36,32 +36,39 @@ public class ContentController {
 
     }
     @GetMapping("/content/{id}")
-    public ContentDto getMovieById(@PathVariable String id){
+    public ContentDto getContentById(@PathVariable String id){
         return service.getContentById(id);
 
     }
     @PostMapping("/content")
-    public ResponseEntity<ContentDto>postMovie(@RequestBody PutPostContentDto movie){
+    public ResponseEntity<ContentDto>postContent(@RequestBody PutPostContentDto movie){
         ContentDto retrievedMovie=service.postContent(movie);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(retrievedMovie);
     }
     @PostMapping("/content/batch")
-    public ResponseEntity<List<ContentDto>>postMovies(@RequestBody BatchPostDto batchPostDto){
+    public ResponseEntity<List<ContentDto>>postContents(@RequestBody BatchPostDto batchPostDto){
 
         List<ContentDto>contentsDto =service.postContents(batchPostDto);
 
         return  ResponseEntity.status(HttpStatus.CREATED).body(contentsDto);
 
     }
+    @PostMapping("/content/batchDelete")
+    public ResponseEntity<?> deleteMovies(@RequestBody List<String>ids){
+
+       service.deleteContents(ids);
+
+       return ResponseEntity.noContent().build();
+    }
 
     @PutMapping("/content/{id}")
-    public ResponseEntity<ContentDto>putMovie(@PathVariable String id, @RequestBody PutPostContentDto dto){
+    public ResponseEntity<ContentDto>putContent(@PathVariable String id, @RequestBody PutPostContentDto dto){
       return ResponseEntity.ok(service.putContent(dto,id));
 
     }
     @DeleteMapping("/content/{id}")
-    public ResponseEntity<ContentDto>deleteMovie(@PathVariable String id){
+    public ResponseEntity<?>deleteMovie(@PathVariable String id){
         service.deleteContent(id);
 
         return ResponseEntity.noContent().build();

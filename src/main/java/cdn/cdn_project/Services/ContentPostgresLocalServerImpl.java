@@ -53,7 +53,8 @@ public class ContentPostgresLocalServerImpl implements ContentService {
                 ContentSpecifications.searchByTitle(query)).
                         or(ContentSpecifications.searchByPlot(query)).
                         or(ContentSpecifications.searchByYear(query)).
-                        or(ContentSpecifications.searchByActorName(query));
+                        or(ContentSpecifications.searchByActorName(query)).
+                        or(ContentSpecifications.searchById(query));
 
 
 
@@ -142,7 +143,6 @@ public class ContentPostgresLocalServerImpl implements ContentService {
         }
 
     }
-
     @Override
     @Transactional
     public List<ContentDto>postContents(BatchPostDto batchPostDto){
@@ -172,6 +172,15 @@ public class ContentPostgresLocalServerImpl implements ContentService {
     @Transactional
     public void deleteContent(String id) {
         movieRepo.deleteById(id);
+    }
+
+
+    @Override
+    @Transactional
+    public void deleteContents(List<String>ids){
+        for(String id:ids){
+            deleteContent(id);
+        }
     }
 
 }

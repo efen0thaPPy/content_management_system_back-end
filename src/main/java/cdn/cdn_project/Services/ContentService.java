@@ -20,6 +20,8 @@ public interface ContentService {
 
     public void deleteContent(String id);
 
+    public void deleteContents(List<String> ids);
+
 
     List<ContentDto> postContents(BatchPostDto batchPostDto);
 }

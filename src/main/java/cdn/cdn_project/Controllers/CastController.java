@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -60,7 +62,7 @@ public class CastController {
      return  ResponseEntity.ok(castService.putCast(id,detailedCastPutPostDto));
     }
 
-    @Transactional
+
     @DeleteMapping("/cast/{id}")
     public ResponseEntity<?>deleteCast(@PathVariable int id){
 
@@ -71,8 +73,16 @@ public class CastController {
     }
 
     @GetMapping ("/cast/alert/{id}")
-    ResponseEntity<CastResponseDto>getAlert(@PathVariable int id){
+   public ResponseEntity<CastResponseDto>getAlert(@PathVariable int id){
       return ResponseEntity.ok(castService.getAlert(id));
 
     }
+
+    @PostMapping
+    public ResponseEntity<?>deleteContents(@RequestBody List<Integer> ids){
+        castService.deleteCasts(ids);
+        return ResponseEntity.noContent().build();
+
+    }
+
 }

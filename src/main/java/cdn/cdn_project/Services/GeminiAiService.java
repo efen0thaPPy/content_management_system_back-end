@@ -8,7 +8,9 @@ import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPutRequestDto;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
+import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Mapper.GeminiMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,7 +41,7 @@ public class GeminiAiService {
             Map.of(
                     "functionDeclarations", List.of(
                             Map.of(
-                                    "name", "create_movie",
+                                    "name", "create_content",
                                     "description", "whenever the user wants to create one content(movie/series)",
                                     "parameters", Map.of(
                                             "type", "object",
@@ -75,13 +77,56 @@ public class GeminiAiService {
                                                     )),
                                                     Map.entry("Director", Map.of(
                                                             "type", "string"
+                                                    )),
+                                                    Map.entry("Seasons", Map.of(
+                                                            "type","array",
+                                                            "description","if user wants to create a movie dont bother filling the fields",
+                                                            "items",Map.of(
+                                                                    "type","object",
+                                                                    "properties",Map.ofEntries(
+                                                                            Map.entry("Season",Map.of("type","string",
+                                                                                    "description","the total number of seasons")),
+                                                                            Map.entry("Episodes",Map.of(
+                                                                                    "type","array",
+                                                                                    "items",Map.of(
+                                                                                            "type","object",
+                                                                                            "description","if user want to create a movie dont bother filling the fields",
+                                                                                            "properties",Map.ofEntries(
+                                                                                                    Map.entry("imdbID",Map.of("type","string")),
+                                                                                                    Map.entry("title",Map.of("type","string")),
+                                                                                                    Map.entry("Episode",Map.of("type","string")),
+                                                                                                    Map.entry("imdbRating",Map.of("type","string")),
+                                                                                                    Map.entry("Released",Map.of("type","string")),
+                                                                                                    Map.entry("Poster",Map.of("type","string")),
+                                                                                                    Map.entry("Plot",Map.of("type","string"))
+
+
+                                                                                            )
+                                                                                    ))))
+                                                                    )
                                                     ))
                                             )
 
                                     )
                             ),
+                            Map.of("name","search_casts",
+                                    "description","Use this tool to find the casts" +
+                                            " when a user wants to perform an operation but only provides" +
+                                            " metadata instead of the ID. And also you can use this tool" +
+                                            " to answer if a casts exists or not and you can use it to return the metadata of a cast",
+                                    "parameters",Map.of(
+                                            "type","object",
+                                            "properties",Map.of(
+                                                    "query",Map.of("type","string"),
+                                                    "castType",Map.of("type","string",
+                                                            "enum",List.of("actor","director"))))
+
+
+                            ),
+
+
                             Map.of(
-                                    "name", "delete_movie",
+                                    "name", "delete_content",
                                     "description", "Delete a content(movie/series) by its id",
                                     "parameters", Map.of(
                                             "type", "object",
@@ -230,7 +275,7 @@ public class GeminiAiService {
 
                                     )
                             ),
-                            Map.of("name","search_content",
+                            Map.of("name","search_contents",
                                     "description","Use this tool to find the ID of a movie or series" +
                                             " when a user wants to perform an operation but only provides" +
                                             " metadata instead of the ID. And also you can use this tool" +
@@ -243,11 +288,52 @@ public class GeminiAiService {
                                                     "enum",List.of("movie","series"))))
 
 
+                            ),
+                            Map.of("name","batch_delete_contents",
+                                    "description","use this tool to delete multiple contents with their id's at once",
+                                    "parameters",Map.of(
+                                            "type","object",
+                                            "properties",Map.of(
+                                                    "ids",Map.of(
+                                                            "type","array",
+                                                            "items",Map.of("type","string"),
+                                                            "description","id's to delete"
+
+                                                            )),
+                                            "required",List.of("ids")
+                                                    )
+
+                            ),
+                            Map.of("name","batch_delete_casts",
+                                    "description","use this tool to delete multiple casts with their id's at once",
+                                    "parameters",Map.of(
+                                            "type","object",
+                                            "properties",Map.of(
+                                                    "ids",Map.of(
+                                                            "type","array",
+                                                            "items",Map.of("type","integer"),
+                                                            "description","id's to delete"
+
+                                                    )),
+                                            "required",List.of("ids")
+                                    )
+
+                            ),
+                            Map.of("name","delete_cast",
+                                    "description","use this tool to delete a cast with their id",
+                                    "parameters",Map.of(
+                                            "type","object",
+                                            "properties",Map.of("id",Map.of(
+                                                    "type","integer",
+                                                        "description","id to delete 1 cast")
+
+                                    )
+
                             )
 
                     )
             )
-    );
+    ));
     public GeminiAiService(RestClient geminiRestClient,
                            ContentPostgresLocalServerImpl contentService,
                            JsonMapper jsonMapper,
@@ -268,15 +354,18 @@ public class GeminiAiService {
                "role","user",
                "parts",List.of(Map.of("text",userText))
        ));
-       return converse(history,0);
+       return converse(history,0,System.currentTimeMillis());
     }
 
     private static final int MAX_TOTAL_HOPS=5;
+    private static final long MAX_TOTAL_TIME_MS=20000;
 
-    private String converse(List<Map<String, Object>>history, int hopCount){
+    private String converse(List<Map<String, Object>>history, int hopCount,long startTime){
         if(hopCount>=MAX_TOTAL_HOPS){
             return "if you keep phrasing as is i wont be able to complete, simplify your request";
         }
+        if(System.currentTimeMillis()-startTime>MAX_TOTAL_TIME_MS)
+            return "it took too long";
         Map<String, Object>requestBody=Map.of(
                 "contents", history,
                 "tools",GEMINI_TOOLS
@@ -286,11 +375,11 @@ public class GeminiAiService {
                 body(requestBody)
                 .retrieve()
                 .body(Map.class);
-        return handleResponse(history,response,hopCount);
+        return handleResponse(history,response,hopCount,startTime);
     }
 
     @SuppressWarnings("unchecked")
-    private String handleResponse(List<Map<String, Object>>history,Map<String,Object>response,int hopCount) {
+    private String handleResponse(List<Map<String, Object>>history,Map<String,Object>response,int hopCount,long startTime) {
         List<Map<String, Object>>candidates=(List<Map<String, Object>>)response.get("candidates");
         Map<String, Object>content=(Map<String, Object>)candidates.get(0).get("content");
         List<Map<String,Object>>parts=(List<Map<String,Object>>)content.get("parts");
@@ -331,7 +420,7 @@ public class GeminiAiService {
 
 
 
-          return converse(history,hopCount+1);
+          return converse(history,hopCount+1,startTime);
 
         }
 
@@ -356,12 +445,12 @@ public class GeminiAiService {
         try{
 
         return switch (toolName) {
-            case "create_movie" -> {
+            case "create_content" -> {
                 PutPostContentDto dto = jsonMapper.convertValue(input, PutPostContentDto.class);
                 ContentDto created = contentService.postContent(dto);
                 yield Map.of("status","created","id",created.getImdbId(), "title", created.getTitle());
             }
-            case "delete_movie" -> {
+            case "delete_content" -> {
                 String id = (String) input.get("id");
                 contentService.deleteContent(id);
                 yield Map.of("status","deleted","id",id);
@@ -391,7 +480,7 @@ public class GeminiAiService {
                 yield Map.of("status","updated","id",castResponseDto.getId());
 
             }
-            case "search_content"->{
+            case "search_contents"->{
                 String query=(String)input.get("query");
                 String contentType=(String)input.get("contentType");
 
@@ -406,6 +495,40 @@ public class GeminiAiService {
                        Map.of("status","ok","matches",results);
 
             }
+            case "search_casts"->{
+                String query=(String)input.get("query");
+                String castType=(String)input.get("castType");
+
+                Pageable limit= PageRequest.of(0,5);
+
+                Page<SimpleCastResponseDto>castDto=castService.getCasts(limit,castType,query);
+
+               List<Map<String,Object>> results=castDto.getContent().stream().map(geminiMapper::toMap).toList();
+
+
+
+                yield results.isEmpty()?
+                        Map.of("status","no_results","query",query):
+                        Map.of("status","ok","matches",results);
+
+            }
+            case "delete_cast"->{
+                int id=(Integer)input.get("id");
+                castService.deleteCast(id);
+                yield Map.of("status","deleted","id",id);
+
+            }
+            case "batch_delete_contents"->{
+                List<String>ids=(List<String>)input.get("ids");
+                contentService.deleteContents(ids);
+                yield Map.of("status","deleted","ids",ids);
+            }
+            case "batch_delete_casts"->{
+                List<Integer>ids=(List<Integer>)input.get("ids");
+               castService.deleteCasts(ids);
+                yield Map.of("status","deleted","ids",ids);
+            }
+
             default -> Map.of("status","error","message","Unknown action: "+toolName);
         };
 

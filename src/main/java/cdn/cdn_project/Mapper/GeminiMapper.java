@@ -1,5 +1,6 @@
 package cdn.cdn_project.Mapper;
 
+import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,15 @@ public class GeminiMapper {
                 map.put("contentType",contentDto.getType());
                 map.put("year",contentDto.getYear());
                 return map;
+
+
+    }
+    public Map<String,Object> toMap(SimpleCastResponseDto castResponseDto){
+        Map<String,Object>map=new HashMap<>();
+        map.put("id",castResponseDto.getId());
+        map.put("name",castResponseDto.getName());
+        map.put("castType",castResponseDto.getCastType());
+        return map;
 
 
     }

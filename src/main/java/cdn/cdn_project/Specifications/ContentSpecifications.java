@@ -21,7 +21,7 @@ public class ContentSpecifications {
 
         return (root,query,criteriaBuilder)->{
 
-            if(id==null || !id.matches("\\d+"))return null;
+            if(id==null || id.trim().isEmpty())return null;
 
             return criteriaBuilder.equal(root.get("imdbId"),id);
 
