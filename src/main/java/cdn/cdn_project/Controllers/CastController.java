@@ -78,7 +78,7 @@ public class CastController {
 
     }
 
-    @PostMapping
+    @PostMapping("/cast/batchDelete")
     public ResponseEntity<?>deleteContents(@RequestBody List<Integer> ids){
         castService.deleteCasts(ids);
         return ResponseEntity.noContent().build();
