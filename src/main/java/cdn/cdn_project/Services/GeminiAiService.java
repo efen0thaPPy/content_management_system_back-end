@@ -16,7 +16,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
@@ -354,7 +356,19 @@ public class GeminiAiService {
                "role","user",
                "parts",List.of(Map.of("text",userText))
        ));
-       return converse(history,0,System.currentTimeMillis());
+       try{
+
+           return converse(history,0,System.currentTimeMillis());
+       }
+       catch (ResourceAccessException ex){
+           return "took too long to process try again";
+       }
+       catch(RestClientResponseException ex){
+           return "problem reaching the ai";
+       }
+       catch (Exception ex){
+           return "something is wrong";
+       }
     }
 
     private static final int MAX_TOTAL_HOPS=5;
@@ -375,6 +389,7 @@ public class GeminiAiService {
                 body(requestBody)
                 .retrieve()
                 .body(Map.class);
+        System.out.println("[hop " + hopCount + "] Gemini call took " + (System.currentTimeMillis() - startTime) + "ms, history size=" + history.size());
         return handleResponse(history,response,hopCount,startTime);
     }
 
