@@ -3,8 +3,8 @@ spring:
     mcp:
       server:
         version: 1.0.0
-        type: async
-        protocol: stateless
+        type: sync
+        protocol: streamable
       client:
         streamable-http:
           connections:

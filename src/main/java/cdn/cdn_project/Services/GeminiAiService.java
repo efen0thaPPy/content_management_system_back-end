@@ -61,6 +61,7 @@ public class GeminiAiService {
             // geminiTools just stays empty and Gemini will reply without tools
             // until this succeeds (e.g. on next deploy/restart).
             System.out.println("Failed to connect to MCP tool server: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
