@@ -60,11 +60,17 @@ public class ContentPostgresLocalServerImpl implements ContentService {
 
         Specification<ContentModel>spec=textSearch.and(ContentSpecifications.searchByContentType(contentType));
 
+        System.out.println("search_contents called with query=" + query + " contentType=" + contentType);
 
 
 
 
-       return movieRepo.findAll(spec,pageable).map(mapper::toDto);
+
+        Page<ContentDto> contentDto=movieRepo.findAll(spec,pageable).map(mapper::toDto);
+
+        System.out.println(contentDto.getContent());
+
+        return contentDto;
 
 
 

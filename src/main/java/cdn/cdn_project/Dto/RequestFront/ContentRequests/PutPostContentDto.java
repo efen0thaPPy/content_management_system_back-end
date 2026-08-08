@@ -2,6 +2,7 @@ package cdn.cdn_project.Dto.RequestFront.ContentRequests;
 
 import cdn.cdn_project.Enums.ContentType;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class PutPostContentDto {
     private String director;
 
     @JsonProperty("contentType")
+    @NotNull
     private ContentType contentType;
 
     @JsonProperty("Poster")

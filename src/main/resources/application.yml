@@ -1,0 +1,13 @@
+spring:
+  ai:
+    mcp:
+      server:
+        version: 1.0.0
+        type: async
+        protocol: stateless
+      client:
+        streamable-http:
+          connections:
+            content-management-tools:
+              url: http://localhost:${server.port:8080}
+        initialized: false
