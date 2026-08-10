@@ -20,11 +20,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Validated
 @RequiredArgsConstructor
 public class CmsToolsService {
 
@@ -57,11 +59,13 @@ public class CmsToolsService {
         return Map.of("status","created","count",contentDtos.size());
     }
 
-    @McpTool(name = "search_contents", description = "When user asks for info about contents or wants to perform an operation without specifying the content's id use this tool. casing doesnt matter on the query whenever you find any data respond, and if you hadn't found after trying both content type of movie and series respond to the user saying library doesnt have the content you are looking for")
-    public Map<String,Object> searchContents( String query,
-                                             @McpToolParam(description = "movie or series") ContentType contentType) {
+    @McpTool(name = "search_contents", description = "When user asks for info about contents or wants to perform an operation without specifying the content's id use this tool. casing doesnt matter on the query whenever you find any data respond, and if you dont find anything after trying both content type of movie and series respond to the user saying library doesnt have the content you are looking for")
+    public Map<String,Object> searchContents(@McpToolParam(required = false,description = "omit if user doesnt provide a hint") String query,
+                                             @McpToolParam(required = false, description = "movie or series or you can omit user didnt specify") ContentType contentType) {
         Pageable limit = PageRequest.of(0, 5);
-        Page<ContentDto> contentDtoPage = contentPostgresLocalServer.getContents(query, contentType.toString(), limit);
+
+        String typeParam=contentType!=null?contentType.toString():null;
+        Page<ContentDto> contentDtoPage = contentPostgresLocalServer.getContents(query, typeParam, limit);
         List<Map<String,Object>> results = contentDtoPage.getContent().stream().map(geminiMapper::toMap).toList();
         return results.isEmpty()
                 ? Map.of("status","no_results","query",query)
@@ -80,19 +84,23 @@ public class CmsToolsService {
         return Map.of("status","created","id",created.getId(),"name",created.getName());
     }
 
-    @McpTool(name = "update_cast", description = "Updates a cast (actor/director) by its id.")
+    @McpTool(name = "update_cast", description = "Updates a cast (actor/director) by its id, if user doesnt provide ids for the content but still want to add some contents you can use search_casts tool to find the ids and then add onto it, if user doesnt mention anything about content's just keep the current ones, stop calling this tool if you tried the query user provided and searched without providing a cast type and still found no match.")
     public Map<String,Object> updateCast(@McpToolParam(description = "the cast id") Integer id,
                                          @Valid CastPutRequestDto castPutRequestDto) {
         CastResponseDto castResponseDto = castPostgresLocalService.putCast(id, castPutRequestDto);
         return Map.of("status","updated","id",castResponseDto.getId());
     }
 
-    @McpTool(name = "search_casts", description = "Searches for actors or directors by name when the user's details are incomplete. Use this to find cast ids or details required for other operations, or to check whether a cast exists.")
-    public Map<String,Object> searchCasts(String query,
-                                          @McpToolParam(description = "actor or director") CastType castType) {
+    @McpTool(name = "search_casts", description = "Search using the query user mentioned dont try any alternatives or change the formatting of that query.")
+    public Map<String,Object> searchCasts(@McpToolParam(required = false,description = "omit if user doesnt provide a hint") String query,
+                                          @McpToolParam(required = false, description = "actor or director or you can omit if user didnt provide one") CastType castType) {
         Pageable limit = PageRequest.of(0, 5);
-        Page<SimpleCastResponseDto> castDto = castPostgresLocalService.getCasts(limit, castType.toString(), query);
+
+        String typeParam=castType!=null?castType.toString():null;
+        Page<SimpleCastResponseDto> castDto = castPostgresLocalService.getCasts(limit, typeParam, query);
         List<Map<String,Object>> results = castDto.getContent().stream().map(geminiMapper::toMap).toList();
+
+
         return results.isEmpty()
                 ? Map.of("status","no_results","query",query)
                 : Map.of("status","ok","matches",results);
