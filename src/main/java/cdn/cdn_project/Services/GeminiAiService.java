@@ -1,6 +1,8 @@
 package cdn.cdn_project.Services;
 
 import cdn.cdn_project.AiConversationStore;
+import cdn.cdn_project.Dto.ResponseFront.AiResponses.AiResponse;
+import cdn.cdn_project.Dto.ResponseFront.AiResponses.NavDto;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -136,7 +138,32 @@ public class GeminiAiService {
         return node;
     }
 
-    public String handleUserMessage(String sessionId, String userText) {
+
+    public boolean isCreateTool(String toolName){
+        return (toolName!=null && toolName.startsWith("create"));
+
+
+    }
+
+    public NavDto extractNav(Object toolResults,String toolName){
+
+        if(!(toolResults instanceof Map<?,?> result))return null;
+        if("error".equals(result.get("status")))return null;
+
+        String []entity=toolName.split("_");
+
+        String entityType=entity[1];
+        Object id=result.get("id");
+        if(id==null)return null;
+
+        return new NavDto(entityType,String.valueOf(id),"create");
+
+
+    }
+
+
+
+    public AiResponse handleUserMessage(String sessionId, String userText) {
         List<Map<String, Object>> history = aiConversationStore.getHistory(sessionId);
         history.add(Map.of(
                 "role", "user",
@@ -145,13 +172,13 @@ public class GeminiAiService {
         try {
             return converse(history, 0, System.currentTimeMillis());
         } catch (ResourceAccessException ex) {
-            return "took too long to process try again";
+              return new AiResponse("took too long to process try again",null);
         } catch (RestClientResponseException ex) {
             System.out.println("Gemini rejected the request: " + ex.getStatusCode()
                     + " body=" + ex.getResponseBodyAsString());
-            return "problem reaching the ai";
+            return new AiResponse("problem reaching the ai",null);
         } catch (Exception ex) {
-            return "something is wrong";
+            return new AiResponse("something is wrong",null);
         }
     }
 
@@ -159,12 +186,12 @@ public class GeminiAiService {
     private static final long MAX_TOTAL_TIME_MS = 30000;
 
     @SuppressWarnings("unchecked")
-    private String converse(List<Map<String, Object>> history, int hopCount, long startTime) {
+    private AiResponse converse(List<Map<String, Object>> history, int hopCount, long startTime) {
         if (hopCount >= MAX_TOTAL_HOPS) {
-            return "hop-count exceeded the maximum ";
+            return new AiResponse("hop-count exceeded the maximum ",null);
         }
         if (System.currentTimeMillis() - startTime > MAX_TOTAL_TIME_MS)
-            return "Timeout limit reached";
+            return new AiResponse("Timeout limit reached",null);
         Map<String, Object> requestBody = Map.of(
                 "contents", history,
                 "tools", geminiTools
@@ -174,12 +201,16 @@ public class GeminiAiService {
                 body(requestBody)
                 .retrieve()
                 .body(Map.class);
-        System.out.println("[hop " + hopCount + "] Gemini call took " + (System.currentTimeMillis() - startTime) + "ms, history size=" + history.size());
+        System.out.println("[hop " + hopCount + "] Gemini call took " +
+                (System.currentTimeMillis() - startTime) + "ms, history size=" + history.size());
         return handleResponse(history, response, hopCount, startTime);
     }
 
     @SuppressWarnings("unchecked")
-    private String handleResponse(List<Map<String, Object>> history, Map<String, Object> response, int hopCount, long startTime) {
+    private AiResponse handleResponse(List<Map<String, Object>> history, Map<String, Object> response, int hopCount, long startTime) {
+
+        NavDto [] navDtos=new NavDto[1];
+
         List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
         Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
         List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
@@ -199,7 +230,14 @@ public class GeminiAiService {
                 Map<String, Object> functionCall = (Map<String, Object>) p.get("functionCall");
                 String toolName = (String) functionCall.get("name");
                 Map<String, Object> input = (Map<String, Object>) functionCall.get("args");
+
+
+
                 Object toolResult = dispatchTool(toolName, input);
+
+                if(isCreateTool(toolName)){
+                   navDtos[0]=extractNav(toolResult,toolName);
+                }
 
                 Map<String, Object> functionResponseBody = new HashMap<>();
                 functionResponseBody.put("response", Map.of("result", toolResult));
@@ -215,7 +253,9 @@ public class GeminiAiService {
                     "parts", functionResponseParts
             ));
 
-            return converse(history, hopCount + 1, startTime);
+            AiResponse aiResponse=converse(history, hopCount + 1, startTime);
+            NavDto navDto= aiResponse.navDto()!=null?aiResponse.navDto():navDtos[0];
+            return new AiResponse(aiResponse.reply(),navDto);
 
         }
 
@@ -227,10 +267,11 @@ public class GeminiAiService {
                         "role", "model",
                         "parts", List.of(part)
                 ));
-                return text;
+                  return new AiResponse(text,null);
+
             }
         }
-        return "i didnt understand that";
+         return new AiResponse("i didnt understand that",null);
 
 
     }

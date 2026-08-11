@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class CastPutRequestDto {
 
-
+    @JsonProperty("Name")
     private String name;
 
     @JsonProperty("Poster")

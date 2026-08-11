@@ -10,6 +10,7 @@ import lombok.Data;
 public class CastRequestDto {
 
     @NotBlank(message = "name field can't be empty")
+    @JsonProperty("Name")
     private String name;
 
     @JsonProperty("Poster")

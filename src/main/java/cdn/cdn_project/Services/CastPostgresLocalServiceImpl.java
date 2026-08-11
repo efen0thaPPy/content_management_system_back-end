@@ -61,6 +61,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
        detailedCastDto.setId(id);
        detailedCastDto.setName(castModel.getName());
         detailedCastDto.setPoster(castModel.getPoster());
+        detailedCastDto.setType(castModel.getCastType());
 
            detailedCastDto.setContents(contentModels.map(contentMapper::toSummarizedContentDto));
 
@@ -85,6 +86,7 @@ public class CastPostgresLocalServiceImpl implements CastService {
         castModel.setNormalizedName(normalizedName);
         castModel.setPoster(detailedContentPostDto.getPoster());
         castModel.setCastType(detailedContentPostDto.getCastType());
+        System.out.println(castModel.getCastType());
 
         castRepo.save(castModel);
 

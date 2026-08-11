@@ -2,6 +2,7 @@ package cdn.cdn_project.Controllers;
 
 
 import cdn.cdn_project.Dto.RequestFront.ChatRequestDto;
+import cdn.cdn_project.Dto.ResponseFront.AiResponses.AiResponse;
 import cdn.cdn_project.Services.GeminiAiService;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +17,7 @@ public class GeminiController {
     }
 
     @PostMapping("/chat")
-    public String chat(@RequestBody ChatRequestDto request) {
+    public AiResponse chat(@RequestBody ChatRequestDto request) {
         return geminiAiService.handleUserMessage(request.getSessionId(),request.getMessage());
     }
 }

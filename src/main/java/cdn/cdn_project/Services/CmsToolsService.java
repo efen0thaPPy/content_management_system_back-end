@@ -41,7 +41,7 @@ public class CmsToolsService {
     @McpTool(name = "create_content", description = "Use this tool when the user wants to create one content (movie/series).")
     public Map<String,Object> createContent(@Valid PutPostContentDto putPostContentDto) {
         ContentDto created = contentPostgresLocalServer.postContent(putPostContentDto);
-        return Map.of("status","created","id",created.getImdbId(),"title",created.getTitle());
+        return Map.of("status","created","id",created.getImdbId(),"title",created.getTitle(),"contentType",created.getType());
     }
 
     @McpTool(name = "delete_content", description = "Deletes a content (movie/series) by its id only if required is true otherwise make a dry-run that reports what would have affected")
@@ -97,10 +97,10 @@ public class CmsToolsService {
         }
     }
 
-    @McpTool(name = "create_cast", description = "Creates a cast (actor/director) by their name and type. Optionally attach it to existing content ids.")
+    @McpTool(name = "create_cast", description = "Creates a cast (actor/director) by their name and type. Attach the content id's if user explicitly asks.")
     public Map<String,Object> createCast(@Valid CastPostRequestDto castPostRequestDto) {
         CastResponseDto created = castPostgresLocalService.postCast(castPostRequestDto);
-        return Map.of("status","created","id",created.getId(),"name",created.getName());
+        return Map.of("status","created","id",created.getId(),"name",created.getName(),"castType",created.getCastType());
     }
 
     @McpTool(name = "update_cast", description = "Updates a cast (actor/director) by its id, if user doesnt provide ids for the content but still want to add some contents you can use search_casts tool to find the ids and then add onto it, if user doesnt mention anything about content's just keep the current ones, stop calling this tool if you tried the query user provided and searched without providing a cast type and still found no match.")
@@ -110,7 +110,7 @@ public class CmsToolsService {
         return Map.of("status","updated","id",castResponseDto.getId());
     }
 
-    @McpTool(name = "search_casts", description = "When user asks for info about casts or wants to perform an operation without specifying the cast's id use this tool. you dont need to fire the same query changing the formatting if you can't find any match the with the first format stop searching and if not found answer with casts you are searching for wasnt not found, and after having info on cast, double check if the results match with what user said (for example a name mentioned only in the plot shouldn't be a match where user wants that name only to be in the title or castbecause the search matches with all of the fields a cast has so false positives are possible but don't re-run the search query again just filter the results")
+    @McpTool(name = "search_casts", description = "When user asks for info about casts or wants to perform an operation without specifying the cast's id use this tool. you dont need to fire the same query changing the formatting if you can't find any match the with the first format stop searching and if not found answer with casts you are searching for wasnt not found, and after having info on cast, double check if the results match with what user said (for example a name mentioned only in the plot shouldn't be a match where user wants that name only to be in the title or cast because the search matches with all of the fields a cast has so false positives are possible but don't re-run the search query again just filter the results")
     public Map<String,Object> searchCasts(@McpToolParam(required = false,description = "omit if user doesnt provide a hint") String query,
                                           @McpToolParam(required = false, description = "actor or director or you can omit if user didnt provide one") CastType castType) {
         Pageable limit = PageRequest.of(0, 5);
