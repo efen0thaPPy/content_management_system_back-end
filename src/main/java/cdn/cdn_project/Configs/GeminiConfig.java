@@ -18,7 +18,7 @@ public class GeminiConfig {
     public RestClient geminiRestClient(RestClient.Builder builder) {
 
 
-        return  builder
+        return builder
                 .baseUrl("https://generativelanguage.googleapis.com/v1beta")
                 .defaultHeader("x-goog-api-key", geminiApiKey)
                 .defaultHeader("Content-Type", "application/json")

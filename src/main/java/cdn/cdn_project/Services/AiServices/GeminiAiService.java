@@ -1,12 +1,9 @@
-package cdn.cdn_project.Services;
+package cdn.cdn_project.Services.AiServices;
 
-import cdn.cdn_project.AiConversationStore;
 import cdn.cdn_project.Dto.ResponseFront.AiResponses.AiResponse;
 import cdn.cdn_project.Dto.ResponseFront.AiResponses.NavDto;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -18,83 +15,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@Service
-public class GeminiAiService {
+@Service("gemini")
+public class GeminiAiService extends AbstractMcpService {
 
     private final RestClient geminiRestClient;
-    private final JsonMapper jsonMapper;
-    private final AiConversationStore aiConversationStore;
-    private final McpSyncClient mcpClient;
 
-    // Empty until connectToToolServer() runs after startup. converse() reads
-    // whatever is in here at request time, so it always sees the latest tools.
-    private volatile List<Map<String, Object>> geminiTools = List.of();
+    private static final String PROVIDER="gemini";
+
+
 
     public GeminiAiService(RestClient geminiRestClient,
                            JsonMapper jsonMapper,
                            AiConversationStore aiConversationStore,
                            List<McpSyncClient> mcpSyncClients) {
+        super(jsonMapper, aiConversationStore, mcpSyncClients.get(0));
         this.geminiRestClient = geminiRestClient;
-        this.jsonMapper = jsonMapper;
-        this.aiConversationStore = aiConversationStore;
-        // Only one streamable-http connection ("content-management-tools") is
-        // configured in application.yml, so exactly one client exists here.
-        // If you ever add a second MCP server connection, replace get(0) with
-        // logic that picks the right client out of this list.
-        this.mcpClient = mcpSyncClients.get(0);
+
     }
 
-    /**
-     * The client bean is created with spring.ai.mcp.client.initialized=false,
-     * so it does NOT try to connect during startup, when our own MCP server
-     * (same app, same JVM) isn't listening on the port yet.
-     * ApplicationReadyEvent only fires after the embedded web server has
-     * started and is accepting connections, so this is the first safe moment
-     * to connect.
-     */
-    @EventListener(ApplicationReadyEvent.class)
-    public void connectToToolServer() {
-        try {
-            mcpClient.initialize();
-            this.geminiTools = buildGeminiTools(mcpClient.listTools().tools());
-            System.out.println("Connected to MCP tool server, loaded " + mcpClient.listTools().tools().size() + " tools");
-        } catch (Exception e) {
-            // Don't crash the whole app if the tool server hop fails once -
-            // geminiTools just stays empty and Gemini will reply without tools
-            // until this succeeds (e.g. on next deploy/restart).
-            System.out.println("Failed to connect to MCP tool server: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Converts MCP's tool listing (name / description / JSON-schema inputSchema)
-     * into the "functionDeclarations" shape Gemini's generateContent API expects.
-     * MCP's inputSchema is already JSON-Schema-shaped the same way Gemini wants
-     * "parameters" shaped, so we can pass it through as-is.
-     */
 
     private static final Set<String> UNSUPPORTED_SCHEMA_KEYS = Set.of(
             "additionalProperties", "$schema", "$id", "$defs", "$ref",
             "$comment", "propertyNames", "const", "examples", "title", "default"
     );
-    private List<Map<String, Object>> buildGeminiTools(List<McpSchema.Tool> tools) {
-        List<Map<String, Object>> declarations = tools.stream()
-                .map(tool -> {
-                    Map<String, Object> declaration = new HashMap<>();
-                    declaration.put("name", tool.name());
-                    declaration.put("description", tool.description());
-                    Map<String, Object> rawSchema = jsonMapper.convertValue(tool.inputSchema(), Map.class);
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> defs = rawSchema.containsKey("$defs")
-                            ? (Map<String, Object>) rawSchema.get("$defs")
-                            : Map.of();
-                    declaration.put("parameters", sanitizeForGemini(rawSchema, defs));
-                    return declaration;
-                })
-                .toList();
-        return List.of(Map.of("functionDeclarations", declarations));
-    }
+
 
     @SuppressWarnings("unchecked")
     private Object sanitizeForGemini(Object node, Map<String, Object> defs) {
@@ -138,33 +82,8 @@ public class GeminiAiService {
         return node;
     }
 
-
-    public boolean isCreateTool(String toolName){
-        return (toolName!=null && toolName.startsWith("create"));
-
-
-    }
-
-    public NavDto extractNav(Object toolResults,String toolName){
-
-        if(!(toolResults instanceof Map<?,?> result))return null;
-        if("error".equals(result.get("status")))return null;
-
-        String []entity=toolName.split("_");
-
-        String entityType=entity[1];
-        Object id=result.get("id");
-        if(id==null)return null;
-
-        return new NavDto(entityType,String.valueOf(id),"create");
-
-
-    }
-
-
-
-    public AiResponse handleUserMessage(String sessionId, String userText) {
-        List<Map<String, Object>> history = aiConversationStore.getHistory(sessionId);
+  public AiResponse handleUserMessage(String sessionId, String userText) {
+        List<Map<String, Object>> history = aiConversationStore.getHistory(sessionId,providerName());
         history.add(Map.of(
                 "role", "user",
                 "parts", List.of(Map.of("text", userText))
@@ -182,8 +101,7 @@ public class GeminiAiService {
         }
     }
 
-    private static final int MAX_TOTAL_HOPS = 5;
-    private static final long MAX_TOTAL_TIME_MS = 30000;
+
 
     @SuppressWarnings("unchecked")
     private AiResponse converse(List<Map<String, Object>> history, int hopCount, long startTime) {
@@ -194,7 +112,7 @@ public class GeminiAiService {
             return new AiResponse("Timeout limit reached",null);
         Map<String, Object> requestBody = Map.of(
                 "contents", history,
-                "tools", geminiTools
+                "tools", tools
         );
         Map<String, Object> response = geminiRestClient.post().
                 uri("/models/gemini-3.6-flash:generateContent").
@@ -259,7 +177,6 @@ public class GeminiAiService {
 
         }
 
-
         for (Map<String, Object> part : parts) {
             if (part.containsKey("text")) {
                 String text = (String) part.get("text");
@@ -276,33 +193,29 @@ public class GeminiAiService {
 
     }
 
-    /**
-     * Every tool call now goes over MCP to CmsToolsService instead of calling
-     * contentService/castService directly. Spring AI's MCP server wraps
-     * whatever your @Tool method returns (a Map, in your case) as JSON text
-     * content on the wire, so we parse it straight back into a Map here.
-     */
-    @SuppressWarnings("unchecked")
-    private Object dispatchTool(String toolName, Map<String, Object> input) {
-        try {
-            McpSchema.CallToolResult result = mcpClient.callTool(new McpSchema.CallToolRequest(toolName, input));
-
-            String resultText = result.content().stream()
-                    .filter(McpSchema.TextContent.class::isInstance)
-                    .map(part -> ((McpSchema.TextContent) part).text())
-                    .findFirst()
-                    .orElse("{}");
-
-            Map<String, Object> parsed = jsonMapper.readValue(resultText, Map.class);
-
-            if (Boolean.TRUE.equals(result.isError())) {
-                return Map.of("status", "error", "message",
-                        parsed.getOrDefault("message", "Tool call failed"));
-            }
-            return parsed;
-        } catch (Exception e) {
-            return Map.of("status", "error", "message",
-                    e.getMessage() != null ? e.getMessage() : "Something went wrong");
-        }
+    @Override
+    public List<Map<String, Object>> buildTools(List<McpSchema.Tool> tools) {
+        List<Map<String, Object>> declarations = tools.stream()
+                .map(tool -> {
+                    Map<String, Object> declaration = new HashMap<>();
+                    declaration.put("name", tool.name());
+                    declaration.put("description", tool.description());
+                    Map<String, Object> rawSchema = jsonMapper.convertValue(tool.inputSchema(), Map.class);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> defs = rawSchema.containsKey("$defs")
+                            ? (Map<String, Object>) rawSchema.get("$defs")
+                            : Map.of();
+                    declaration.put("parameters", sanitizeForGemini(rawSchema, defs));
+                    return declaration;
+                })
+                .toList();
+        return List.of(Map.of("functionDeclarations", declarations));
     }
+
+    @Override
+    protected String providerName() {
+        return PROVIDER;
+    }
+
+
 }

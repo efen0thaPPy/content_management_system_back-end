@@ -6,4 +6,5 @@ import lombok.Data;
 public class ChatRequestDto {
     private String sessionId;
     private String message;
+    private String providerName;
 }

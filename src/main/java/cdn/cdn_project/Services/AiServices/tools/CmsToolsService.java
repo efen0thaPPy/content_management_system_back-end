@@ -1,4 +1,4 @@
-package cdn.cdn_project.Services;
+package cdn.cdn_project.Services.AiServices.tools;
 
 import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPostRequestDto;
 import cdn.cdn_project.Dto.RequestFront.CastRequests.CastPutRequestDto;
@@ -11,20 +11,18 @@ import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Enums.CastType;
 import cdn.cdn_project.Enums.ContentType;
 import cdn.cdn_project.Mapper.GeminiMapper;
+import cdn.cdn_project.Services.CastPostgresLocalServiceImpl;
+import cdn.cdn_project.Services.ContentPostgresLocalServerImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-import tools.jackson.databind.ser.std.DelegatingSerializer;
 
-import javax.swing.text.AbstractDocument;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

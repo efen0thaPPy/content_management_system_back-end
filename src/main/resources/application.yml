@@ -5,9 +5,10 @@ spring:
         version: 1.0.0
         type: sync
         protocol: streamable
+        name: content-catalog-mcp
       client:
+        initialized: false
         streamable-http:
           connections:
             content-management-tools:
               url: http://localhost:${server.port:8080}
-        initialized: false
