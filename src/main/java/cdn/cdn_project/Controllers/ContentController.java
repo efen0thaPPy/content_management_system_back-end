@@ -3,6 +3,7 @@ package cdn.cdn_project.Controllers;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import cdn.cdn_project.Services.ContentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +25,7 @@ public class ContentController {
 
 
     @GetMapping("/content")
-    public Page<ContentDto> getContents(
+    public Page<SummarizedContentDto> getContents(
             @PageableDefault(size = 20,page = 0) Pageable pageable,
             @RequestParam(required = false)  String query,
             @RequestParam(required = false) String contentType)

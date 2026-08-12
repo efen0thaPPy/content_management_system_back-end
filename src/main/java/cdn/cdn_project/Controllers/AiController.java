@@ -4,7 +4,7 @@ package cdn.cdn_project.Controllers;
 import cdn.cdn_project.Services.AiServices.AiConversationStore;
 import cdn.cdn_project.Dto.RequestFront.ChatRequestDto;
 import cdn.cdn_project.Dto.ResponseFront.AiResponses.AiResponse;
-import cdn.cdn_project.Services.AiServices.AbstractMcpService;
+import cdn.cdn_project.Services.AiServices.Providers.AbstractMcpService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

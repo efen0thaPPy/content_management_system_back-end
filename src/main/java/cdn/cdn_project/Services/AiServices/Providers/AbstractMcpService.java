@@ -1,7 +1,8 @@
-package cdn.cdn_project.Services.AiServices;
+package cdn.cdn_project.Services.AiServices.Providers;
 
 import cdn.cdn_project.Dto.ResponseFront.AiResponses.AiResponse;
 import cdn.cdn_project.Dto.ResponseFront.AiResponses.NavDto;
+import cdn.cdn_project.Services.AiServices.AiConversationStore;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

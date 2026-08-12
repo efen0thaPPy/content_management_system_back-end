@@ -26,7 +26,7 @@ public class ContentDto {
     private String poster;
 
     @Enumerated(EnumType.STRING)
-    @JsonProperty("Type")
+    @JsonProperty("contentType")
     private ContentType type;
 
     @JsonProperty("Plot")

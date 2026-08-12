@@ -7,7 +7,7 @@ import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostSeasonDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.EpisodeDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SeasonDto;
-import cdn.cdn_project.Dto.ResponseFront.CastResponses.SummarizedContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import cdn.cdn_project.Entities.CastModel;
 import cdn.cdn_project.Entities.ContentModel;
 import cdn.cdn_project.Entities.EpisodeModel;

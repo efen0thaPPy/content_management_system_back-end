@@ -1,5 +1,6 @@
 package cdn.cdn_project.Dto.ResponseFront.CastResponses;
 
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import cdn.cdn_project.Enums.CastType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

@@ -2,6 +2,7 @@ package cdn.cdn_project.Mapper;
 
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +12,7 @@ import java.util.Map;
 @Component
 public class GeminiMapper {
 
-    public Map<String,Object> toMap(ContentDto contentDto){
+    public Map<String,Object> toMap(SummarizedContentDto contentDto){
        Map<String,Object>map=new HashMap<>();
                map.put( "id",contentDto.getImdbId());
                 map.put("title",contentDto.getTitle());

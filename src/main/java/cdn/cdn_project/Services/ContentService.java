@@ -3,6 +3,7 @@ package cdn.cdn_project.Services;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,7 +13,7 @@ public interface ContentService {
 
     public ContentDto getContentById(String id);
 
-    public Page<ContentDto> getContents(String query,String contentType, Pageable pageable);
+    public Page<SummarizedContentDto> getContents(String query, String contentType, Pageable pageable);
 
     public ContentDto putContent(PutPostContentDto dto, String id);
 

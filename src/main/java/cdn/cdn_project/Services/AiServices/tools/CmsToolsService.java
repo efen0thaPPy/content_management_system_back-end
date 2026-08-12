@@ -8,8 +8,10 @@ import cdn.cdn_project.Dto.ResponseFront.CastResponses.CastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.PaginatedCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.CastResponses.SimpleCastResponseDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import cdn.cdn_project.Enums.CastType;
 import cdn.cdn_project.Enums.ContentType;
+import cdn.cdn_project.ExceptionHandling.NotFound;
 import cdn.cdn_project.Mapper.GeminiMapper;
 import cdn.cdn_project.Services.CastPostgresLocalServiceImpl;
 import cdn.cdn_project.Services.ContentPostgresLocalServerImpl;
@@ -42,20 +44,24 @@ public class CmsToolsService {
         return Map.of("status","created","id",created.getImdbId(),"title",created.getTitle(),"contentType",created.getType());
     }
 
-    @McpTool(name = "delete_content", description = "Deletes a content (movie/series) by its id only if required is true otherwise make a dry-run that reports what would have affected")
-    public Map<String,Object> deleteContent(@McpToolParam(description = "the content id") String id,@McpToolParam(description = "must be true, ask explicitly to user") boolean confirmed) {
-        if(confirmed){
-            contentPostgresLocalServer.deleteContent(id);
-            return Map.of("status","deleted","id",id);
-        }
-        else{
+    @McpTool(name = "preview_delete_content", description = "Shows what would be deleted for a given content id. Always call this first before any deletion. Never call delete_content in the same turn as this — you must wait for the user's explicit next message confirming they want to proceed.")
+    public Map<String,Object> preview_deleteContent(@McpToolParam(description = "the content id") String id) {
+
             ContentDto contentDto=contentPostgresLocalServer.getContentById(id);
             Map<String,Object>wouldDelete=new HashMap<>();
             wouldDelete.put("id",contentDto.getImdbId());
             wouldDelete.put("title",contentDto.getTitle());
             wouldDelete.put("type",contentDto.getType());
             return Map.of("status","preview","wouldDelete",wouldDelete);
-        }
+
+    }
+    @McpTool(name = "delete_content", description = "Permanently deletes a content by id. Only call this if the user's most recent message is an explicit, unambiguous 'yes' to a deletion you previously previewed in this same conversation. If there is any doubt, call preview_delete_content instead and ask the user.")
+    public Map<String,Object> deleteContent(@McpToolParam(description = "the content id") String id) {
+
+            contentPostgresLocalServer.deleteContent(id);
+            return Map.of("status","deleted","id",id);
+
+
     }
 
     @McpTool(name = "update_content", description = "Updates a content (movie/series). Requires the content id.")
@@ -76,23 +82,53 @@ public class CmsToolsService {
                                              @McpToolParam(required = false, description = "movie or series or you can omit user didnt specify") ContentType contentType) {
         Pageable limit = PageRequest.of(0, 5);
         String typeParam=contentType!=null?contentType.toString():null;
-        Page<ContentDto> contentDtoPage = contentPostgresLocalServer.getContents(query, typeParam, limit);
+        Page<SummarizedContentDto> contentDtoPage = contentPostgresLocalServer.getContents(query, typeParam, limit);
         List<Map<String,Object>> results = contentDtoPage.getContent().stream().map(geminiMapper::toMap).toList();
         return results.isEmpty()
                 ? Map.of("status","no_results","query",query)
                 : Map.of("status","ok","matches",results);
     }
+    @McpTool(name = "get_content_details", description = "When user asks info about the specific content's seasons or episodes use this tool. you dont need to fire the same query changing the formatting if you can't find any match the with the first format stop searching and if not found, answer with \"The content you are looking for wasnt not found\", once you used this tool, you have every info about that content and dont need to look for more info")
+    public Map<String,Object> get_content_details(@McpToolParam(description = "if you are missing the id ask search_contents tool") String id
+    ) {
+        try{
 
-    @McpTool(name = "batch_delete_contents", description = "Deletes multiple contents at once by their ids only if confirmed is true otherwise make dry-run that reports what would have affected")
-    public Map<String,Object> batchDeleteContents(@McpToolParam(description = "ids to delete") List<String> ids,@McpToolParam(description = "must be true, ask user explicitly") boolean confirmed) {
+            ContentDto contentDto = contentPostgresLocalServer.getContentById(id);
 
-        if(confirmed){
+            Map<String,Object>results=Map.of(
+                    "id",contentDto.getImdbId(),
+                    "seasons/episodes",contentDto.getSeasons(),
+                    "title",contentDto.getTitle(),
+                    "contentType",contentDto.getType(),
+                    "casts",contentDto.getCasts()
+
+            );
+           return Map.of("status","ok","result",results);
+
+
+        }
+        catch(NotFound e){
+            return Map.of("status","error","message",e.getMessage());
+
+        }
+
+
+
+    }
+
+    @McpTool(name = "batch_delete_contents", description = "Permanently deletes contents by their id's. Only call this if the user's most recent message is an explicit, unambiguous 'yes' to a deletion you previously previewed in this same conversation. If there is any doubt, call preview_batch_delete_casts instead and ask the user.")
+    public Map<String,Object> batchDeleteContents(@McpToolParam(description = "ids to delete") List<String> ids) {
+
             contentPostgresLocalServer.deleteContents(ids);
             return Map.of("status","deleted","ids",ids);
-        }
-        else{
+
+    }
+    @McpTool(name = "preview_batch_delete_contents", description = "Shows the set of id's of the shows that would be deleted. Always call this first before batch_delete_content. Never call batch_delete_content in the same turn as this — you must wait for the user's explicit next message confirming they want to proceed.")
+    public Map<String,Object> preview_batch_delete_contents(@McpToolParam(description = "ids to delete") List<String> ids) {
+
+
             return Map.of("status","preview","ids",ids);
-        }
+
     }
 
     @McpTool(name = "create_cast", description = "Creates a cast (actor/director) by their name and type. Attach the content id's if user explicitly asks.")
@@ -123,39 +159,43 @@ public class CmsToolsService {
                 : Map.of("status","ok","matches",results);
     }
 
-    @McpTool(name = "delete_cast", description = "Deletes a cast (actor/director) by its id only if confirmed is true otherwise make a dry-run that reports what would have affected")
-    public Map<String,Object> deleteCast(@McpToolParam(description = "id to delete") Integer id,@McpToolParam(description = "must be true, ask the user explicitly") boolean confirmed) {
-
-        if(confirmed){
+    @McpTool(name = "delete_cast", description = "Permanently deletes a cast by id. Only call this if the user's most recent message is an explicit, unambiguous 'yes' to a deletion you previously previewed in this same conversation. If there is any doubt, call preview_delete_cast instead and ask the user.\"")
+    public Map<String,Object> deleteCast(@McpToolParam(description = "id to delete") Integer id) {
 
         castPostgresLocalService.deleteCast(id);
         return Map.of("status","deleted","id",id);
-        }
+
+    }
+    @McpTool(name = "preview_delete_cast", description = "Shows what would be deleted for a given cast id. Always call this first before delete_cast. Never call delete_cast in the same turn as this — you must wait for the user's explicit next message confirming they want to proceed.")
+    public Map<String,Object> preview_delete_cast(@McpToolParam(description = "id to delete") Integer id) {
 
 
-        else{
-          PaginatedCastResponseDto castResponseDto=castPostgresLocalService.getCast(id,PageRequest.of(0,5));
 
-          Map<String,Object>wouldDelete=new HashMap<>();
-          wouldDelete.put("id",castResponseDto.getId());
+            PaginatedCastResponseDto castResponseDto=castPostgresLocalService.getCast(id,PageRequest.of(0,5));
+
+            Map<String,Object>wouldDelete=new HashMap<>();
+            wouldDelete.put("id",castResponseDto.getId());
             wouldDelete.put("name",castResponseDto.getName());
             wouldDelete.put("contents",castResponseDto.getContents());
-          return Map.of("status","preview","wouldDelete",wouldDelete);
+            return Map.of("status","preview","wouldDelete",wouldDelete);
 
 
-        }
 
     }
 
-    @McpTool(name = "batch_delete_casts", description = "Deletes multiple casts at once by their ids only if confirmed is true otherwise do a dry-run that reports what would have affected")
-    public Map<String,Object> batchDeleteCasts(@McpToolParam(description = "ids to delete") List<Integer> ids,@McpToolParam(description = "must be true, ask user explicitly")boolean confirmed) {
-        if(confirmed){
+    @McpTool(name = "batch_delete_casts", description = "Permanently deletes casts with their id's. Only call this if the user's most recent message is an explicit, unambiguous 'yes' to a deletion you previously previewed in this same conversation. If there is any doubt, call preview_batch_delete instead and ask the user.\"")
+    public Map<String,Object> batchDeleteCasts(@McpToolParam(description = "ids to delete") List<Integer> ids) {
+
 
             castPostgresLocalService.deleteCasts(ids);
             return Map.of("status","deleted","ids",ids);
-        }
-        else {
+
+    }
+
+    @McpTool(name = "preview_batch_delete_casts", description = "Shows the set of ids of the casts that would be deleted. Always call this first before batch_delete_cast. Never call batch_delete_casts in the same turn as this — you must wait for the user's explicit next message confirming they want to proceed.")
+    public Map<String,Object> preview_batch_delete(@McpToolParam(description = "ids to delete") List<Integer> ids) {
+
             return  Map.of("status","preview","ids",ids);
-        }
+
     }
 }

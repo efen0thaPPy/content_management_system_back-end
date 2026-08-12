@@ -2,6 +2,7 @@ package cdn.cdn_project.Services;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.BatchPostDto;
 import cdn.cdn_project.Dto.RequestFront.ContentRequests.PutPostContentDto;
 import cdn.cdn_project.Dto.ResponseFront.ContentResponses.ContentDto;
+import cdn.cdn_project.Dto.ResponseFront.ContentResponses.SummarizedContentDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbEpisodeDto;
 import cdn.cdn_project.Dto.omdbDtos.OmdbSeasonDto;
 import cdn.cdn_project.Entities.ContentModel;
@@ -47,7 +48,7 @@ public class ContentPostgresLocalServerImpl implements ContentService {
 
 
     @Override
-    public Page<ContentDto> getContents(String query, String contentType,Pageable pageable) {
+    public Page<SummarizedContentDto> getContents(String query, String contentType, Pageable pageable) {
 
         Specification<ContentModel>textSearch=Specification.where(
                 ContentSpecifications.searchByTitle(query)).
@@ -61,9 +62,8 @@ public class ContentPostgresLocalServerImpl implements ContentService {
         Specification<ContentModel>spec=textSearch.and(ContentSpecifications.searchByContentType(contentType));
 
 
-        Page<ContentDto> contentDto=movieRepo.findAll(spec,pageable).map(mapper::toDto);
+        Page<SummarizedContentDto> contentDto=movieRepo.findAll(spec,pageable).map(mapper::toSummarizedContentDto);
 
-        System.out.println(contentDto.getContent());
 
         return contentDto;
 
