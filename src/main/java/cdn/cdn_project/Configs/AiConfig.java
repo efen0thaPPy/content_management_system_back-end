@@ -16,6 +16,9 @@ public class AiConfig {
     @Value("${groq.api.key}")
     private String groqApiKey;
 
+    @Value("${nvidia.api.key}")
+    private String nvidiaApiKey;
+
     @Bean
     public RestClient geminiRestClient(RestClient.Builder builder) {
 
@@ -36,6 +39,18 @@ public class AiConfig {
                 .defaultHeader("Authorization", "Bearer "+ groqApiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
+    }
+
+    @Bean
+    public RestClient nvidiaRestClient(RestClient.Builder builder) {
+
+
+        return builder
+                .baseUrl("https://integrate.api.nvidia.com/v1")
+                .defaultHeader("Authorization", "Bearer " + nvidiaApiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+
     }
 }
 

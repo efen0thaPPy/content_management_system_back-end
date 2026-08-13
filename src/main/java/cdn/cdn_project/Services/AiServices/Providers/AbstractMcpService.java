@@ -20,7 +20,7 @@ public abstract class AbstractMcpService {
 
 
     protected static final int MAX_TOTAL_HOPS = 5;
-    protected static final long MAX_TOTAL_TIME_MS = 30000;
+    protected static final long MAX_TOTAL_TIME_MS = 40000;
 
 
     protected volatile List<Map<String, Object>> tools = List.of();

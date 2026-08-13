@@ -66,6 +66,7 @@ public class ContentMapper {
         ContentModel contentModel = movieRepo.findById(id).
                 orElseThrow(() -> new RuntimeException("content doesnt exist"));
 
+        if(putPostContentDto.getPoster()!=null) contentModel.setPoster(putPostContentDto.getPoster());
         if (putPostContentDto.getPlot() != null) contentModel.setPlot(putPostContentDto.getPlot());
         if (putPostContentDto.getYear() != null) contentModel.setYear(putPostContentDto.getYear());
         if (putPostContentDto.getTitle() != null) contentModel.setTitle(putPostContentDto.getTitle());
